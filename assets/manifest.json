@@ -1,0 +1,23 @@
+{
+  "version": "1.0.0",
+  "template": "assets/template.pptx",
+  "profile": "references/profile.json",
+  "template_sha256": "03ed00d049af40299af5c9e3e846cd7ae6aff18aa7072db4e7f0033971b6003c",
+  "profile_sha256": "b330454fc47fdc0a639792d0365b85e5b57d6375a21c149936d2e23c99337c10",
+  "source_lesson02_sha256": "77cfcc61a726aeea0dd06562226f10abfaf2dc8233a8051d8a43521c43fcd506",
+  "lecturer_original_sha256": "0f20a249f598e09a0412c1d0e0a001195785607d7c31d360e04ba8172372e0a4",
+  "images": [
+    {
+      "source_part": "ppt/media/image1.png",
+      "file": "assets/images/image1.png",
+      "sha256": "0ed2b06a1dbf744dcdbb4015d8dde2e61b1577d279e2059288386e7c6e4bec26"
+    },
+    {
+      "source_part": "ppt/media/image17.svg",
+      "file": "assets/images/image17.svg",
+      "sha256": "b3023269ad789bac01bb438a4cc3040f5d1a8f3a41c9903d4f2e8973fbb4ee69"
+    }
+  ],
+  "notes": "Bundled template contains editable generic prompts; original lecturer deck is available as a release attachment. Assets retain their original rights.",
+  "preview_sha256": "be247febf706d73d4f4f0caee442f6ae56fe54d0efe09ff24a8c6d6c657702c2"
+}
