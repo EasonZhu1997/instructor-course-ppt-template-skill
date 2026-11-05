@@ -1,0 +1,163 @@
+{
+  "title": "Rokid AIUI 入门开发",
+  "slides": [
+    {
+      "layout": "cover",
+      "slots": {
+        "title": "Rokid\nAIUI\n入门开发",
+        "presenter": "入门开发示例"
+      }
+    },
+    {
+      "layout": "overview",
+      "slots": {
+        "title": "学习目标",
+        "subtitle": "第一次接触 AIUI 项目，先建立可观察的开发闭环",
+        "module": "入门单元",
+        "heading1": "理解 Studio 流程",
+        "body1": "组织项目、编辑页面、观察预览、检查问题并迭代",
+        "heading2": "读懂项目与页面",
+        "body2": "认清 app.json、app.js、pages/ 和 assets/ 的分工",
+        "heading3": "观察最小应用预览",
+        "body3": "以显示 Hello AIUI 为目标\n完成配置、逻辑、模板与样式的首轮检查",
+        "heading4": "完成绑定与交互检查",
+        "body4": "用 setData 更新文字，再用 bindtap 串起一次事件",
+        "sidebar_title": "学习提醒",
+        "sidebar1": "先做一个 Page",
+        "sidebar2": "入口以当前版本为准",
+        "sidebar3": "预览与真机分别验证",
+        "sidebar_note": "先求可观察，再逐步扩展"
+      }
+    },
+    {
+      "layout": "section",
+      "slots": {
+        "module": "AIUI Studio",
+        "title": "开发流程",
+        "description": "Studio 是组织项目、编辑页面、观察预览与迭代问题的工作台；入口与按钮以当前版本为准。",
+        "objectives_title": "三个环节，围绕一个可观察目标",
+        "code1": "01",
+        "heading1": "组织项目",
+        "body1": "先明确一个 Page 与最小目标",
+        "code2": "02",
+        "heading2": "编辑页面",
+        "body2": "写配置、逻辑、模板与样式",
+        "code3": "03",
+        "heading3": "观察迭代",
+        "body3": "看预览、查问题、再改一轮"
+      }
+    },
+    {
+      "layout": "comparison",
+      "slots": {
+        "title": "项目结构与页面",
+        "subtitle": "同一路由只选一种组织方式",
+        "module": "项目结构",
+        "left_label": "app.json",
+        "left_body": "声明页面路由\n不带 .ink 后缀",
+        "left_note": "示例：pages/index/index",
+        "right_label": "页面文件",
+        "right_body": "pages/index/index.ink\n含配置、逻辑、模板与样式",
+        "right_note": "路由与文件名要对应",
+        "heading1": "路由声明",
+        "body1": "app.json 的 pages 列出页面路径",
+        "heading2": "单文件页面",
+        "body2": "四个区块写在一个 .ink 文件里",
+        "heading3": "其他文件",
+        "body3": "app.js 放应用逻辑，assets/ 放资源"
+      }
+    },
+    {
+      "layout": "concepts",
+      "slots": {
+        "title": "最小 Page",
+        "subtitle": "四个区块组织一个最小页面",
+        "module": "最小页面",
+        "heading1": "script def：页面配置",
+        "body1": "在 <script def> 中放 JSON 配置，声明页面级设置。",
+        "heading2": "script setup：页面逻辑",
+        "body2": "export default { data: { message: 'Hello AIUI' } }",
+        "heading3": "page 与 style：结构与样式",
+        "body3": "<page> 用 {{message}} 显示文字，<style> 放样式并沿用主题变量。",
+        "callout_title": "预览目标",
+        "callout_body": "目标：让预览显示 Hello AIUI，随后另做设备验证。"
+      }
+    },
+    {
+      "layout": "comparison",
+      "slots": {
+        "title": "数据绑定与状态更新",
+        "subtitle": "模板读 data，更新走 setData",
+        "module": "数据绑定",
+        "left_label": "初始文字",
+        "left_body": "message 初始为\n'Hello AIUI'",
+        "left_note": "模板 {{message}} 读取 data",
+        "right_label": "状态更新",
+        "right_body": "this.setData({\nmessage: '你好 AIUI' })",
+        "right_note": "只改 this.data 不会自动刷新",
+        "heading1": "初始状态",
+        "body1": "data 里的 message 决定首屏文字",
+        "heading2": "更新方式",
+        "body2": "用 this.setData(patch) 提交变更",
+        "heading3": "观察结果",
+        "body3": "预览中的文字应随状态更新"
+      }
+    },
+    {
+      "layout": "concepts",
+      "slots": {
+        "title": "基础交互",
+        "subtitle": "从模板事件到状态更新的最短链路",
+        "module": "事件交互",
+        "heading1": "绑定事件",
+        "body1": "模板写 bindtap=\"changeMessage\" 指向处理函数",
+        "heading2": "处理函数",
+        "body2": "changeMessage() 定义在 export default 对象中",
+        "heading3": "更新显示",
+        "body3": "函数内调用 this.setData 更新文字",
+        "callout_title": "真机另验",
+        "callout_body": "bindtap 是模板事件，设备输入与焦点需在目标设备单独核对。"
+      }
+    },
+    {
+      "layout": "concepts",
+      "slots": {
+        "title": "调试检查",
+        "subtitle": "按顺序定位，从路由到显示逐层排查",
+        "module": "检查清单",
+        "heading1": "先查路由与文件",
+        "body1": "app.json 路径与 pages/index/index.ink 是否对应",
+        "heading2": "再查区块与导出",
+        "body2": "四个区块齐全，逻辑使用 export default",
+        "heading3": "最后查绑定与显示",
+        "body3": "绑定名、处理函数名、setData 后的文字一致",
+        "callout_title": "顺序排查",
+        "callout_body": "路由 → 文件 → 导出 → 绑定 → 显示，一次只改一处。"
+      }
+    },
+    {
+      "layout": "exercise",
+      "slots": {
+        "title": "课堂\n练习",
+        "instruction": "整理 Page 文件与路由，完成一次事件更新并记录现象。",
+        "duration": "课堂练习",
+        "question1": "写出 app.json 路由与对应 .ink 文件路径",
+        "question2": "把 Hello AIUI 改成自己的欢迎语并检查预览",
+        "question3": "加入 bindtap 更新文字，记录触发与显示结果",
+        "footer": "先查路由，再查导出，最后查绑定"
+      }
+    },
+    {
+      "layout": "closing",
+      "slots": {
+        "eyebrow": "课程小结",
+        "title": "结构正确、预览正常\n设备验证另做",
+        "outcome1": "项目骨架",
+        "outcome2": "最小页面",
+        "outcome3": "绑定与交互",
+        "outcome4": "预览记录",
+        "footer": "源码、预览与真机是三个不同检查项"
+      }
+    }
+  ]
+}

@@ -2,8 +2,8 @@
   "version": "1.0.0",
   "template": "assets/template.pptx",
   "profile": "references/profile.json",
-  "template_sha256": "03ed00d049af40299af5c9e3e846cd7ae6aff18aa7072db4e7f0033971b6003c",
-  "profile_sha256": "b330454fc47fdc0a639792d0365b85e5b57d6375a21c149936d2e23c99337c10",
+  "template_sha256": "070d2e948d3cae511666b6f073a8e75a2325c48d70f61d004565e46218cd3b04",
+  "profile_sha256": "b9a29e5dcc7725646afb3ba4bd930c82182915f2932f5578c63731c1facbf14c",
   "source_lesson02_sha256": "77cfcc61a726aeea0dd06562226f10abfaf2dc8233a8051d8a43521c43fcd506",
   "lecturer_original_sha256": "0f20a249f598e09a0412c1d0e0a001195785607d7c31d360e04ba8172372e0a4",
   "images": [
@@ -18,6 +18,15 @@
       "sha256": "b3023269ad789bac01bb438a4cc3040f5d1a8f3a41c9903d4f2e8973fbb4ee69"
     }
   ],
-  "notes": "Bundled template contains editable generic prompts; original lecturer deck is available as a release attachment. Assets retain their original rights.",
-  "preview_sha256": "be247febf706d73d4f4f0caee442f6ae56fe54d0efe09ff24a8c6d6c657702c2"
+  "notes": "Generic editable teaching template; green is reserved for explicitly identified AIUI single-green glasses screen illustrations. Assets retain original rights.",
+  "preview_sha256": "da813edde800084ec1ca73cf01845f635a28bdc0bbfa4e754aefbff0dd6e39a2",
+  "name": "讲师课程 PPT 模版 Skill",
+  "repository": "https://github.com/EasonZhu1997/instructor-course-ppt-template-skill",
+  "example": {
+    "title": "Rokid AIUI 入门开发",
+    "content": "examples/rokid-aiui-intro-content.json",
+    "pptx": "examples/rokid-aiui-intro.pptx",
+    "content_sha256": "c72d351d459adc700aba16c6a43b2718c559c6cc86c8b2137f8ef296b16f3902",
+    "pptx_sha256": "f07bde33942652b0f8cb0f1e64579ece5dc7db663e5d76eaaa97e10aaefc68fc"
+  }
 }

@@ -387,7 +387,10 @@
           "auto": "@page"
         }
       },
-      "remove_shapes": []
+      "remove_shapes": [],
+      "color_map": {
+        "40FF5E": "FFFFFF"
+      }
     },
     "exercise": {
       "slide": 9,

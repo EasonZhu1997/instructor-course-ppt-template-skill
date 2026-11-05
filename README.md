@@ -1,6 +1,6 @@
-# 金牌讲师课程 PPT 模板
+# 讲师课程 PPT 模版 Skill
 
-**Gold Medal Instructor · Course PPT Template**
+**Instructor Course PPT Template Skill**
 
 让 DSH 根据课程讲稿生成可编辑的 PPTX，并沿用 Lesson 教学版的蓝紫版式。
 
@@ -10,7 +10,7 @@
 
 技能已内置七种可编辑版式、所需图片和可重新提取模板的 Lesson02 源文件。首次使用无需自行寻找原课件。
 
-[下载完整技能 ZIP](https://github.com/EasonZhu1997/gold-medal-instructor-course-ppt-template/releases/latest/download/course-ppt-template.zip) · [下载原始讲师模板及查看发布说明](https://github.com/EasonZhu1997/gold-medal-instructor-course-ppt-template/releases/latest)
+[下载完整技能 ZIP](https://github.com/EasonZhu1997/instructor-course-ppt-template-skill/releases/latest/download/course-ppt-template.zip) · [下载原始讲师模板及查看发布说明](https://github.com/EasonZhu1997/instructor-course-ppt-template-skill/releases/latest)
 
 ![七种通用教学版式预览](assets/preview.png)
 
@@ -29,6 +29,14 @@ flowchart LR
 
 输出的文字可以继续编辑，背景和装饰沿用源模板。它不会自动实现课件中讲授的应用、原型或服务器。
 
+## AIUI 演示图什么时候用绿色
+
+技能面向各类讲师课程，默认使用通用课件配色。讲授 **Rokid AIUI 单绿眼镜界面** 时，可以辅助准备或生成黑底绿字的界面示意图，绿色只出现在眼镜画面区域；Studio 工具截图、手机界面和其他课程不自动变绿。
+
+优先采用实际截图或预览截图。宿主有图片生成工具时，可生成明确标注的教学概念图；没有绘图工具时，提供可复制提示词并说明尚未成图。`deepseek-flash` 的文字生成能力本身不等于图片生成能力。
+
+当前固定版式引擎只有文字槽，辅助图作为独立配套素材交付，不会自动覆盖 PPT 中的文字或装饰。需要图片入稿时，应使用明确的图片槽或独立编辑流程，再检查完整页面。详见 [AIUI 演示图说明与 Hello AIUI 提示词](references/aiui-demo-visuals.md)。
+
 ## 三步开始使用
 
 1. 下载上方技能 ZIP 并解压，得到 `course-ppt-template/` 文件夹。
@@ -45,8 +53,8 @@ flowchart LR
 也可以通过 Git 下载并安装：
 
 ```bash
-git clone https://github.com/EasonZhu1997/gold-medal-instructor-course-ppt-template.git
-python3 gold-medal-instructor-course-ppt-template/scripts/install_skill.py
+git clone https://github.com/EasonZhu1997/instructor-course-ppt-template-skill.git
+python3 instructor-course-ppt-template-skill/scripts/install_skill.py
 ```
 
 ## 已安装后怎样调用
@@ -58,15 +66,16 @@ python3 gold-medal-instructor-course-ppt-template/scripts/install_skill.py
 选择当前账号可用的 `deepseek-flash`，然后提供课程资料和要求。例如：
 
 ```text
-请使用 course-ppt-template 技能，为《手机摄影入门》制作10页中文PPT。
+请使用 course-ppt-template 技能，为《Rokid AIUI 入门开发》制作10页中文PPT。
 
-对象：零基础成年人。
-课时：45分钟。
+对象：第一次接触 AIUI 的开发者。
+课时：60分钟。
 主讲：课程讲师。
-内容：拍前检查、光线方向、简洁构图、拍摄练习与比较改进。
+内容：AIUI Studio、项目与页面结构、最小应用、数据绑定、交互和预览调试。
 交付：可编辑PPTX。
 
-使用已配置的本机模板，保持字体、配色和位置。
+使用技能内置模板，保持课程版式。
+若需要AIUI眼镜端画面，可辅助生成单绿界面示意图；只在该屏幕区域用绿色。
 请读取完整SKILL.md，生成后执行结构验证，渲染并检查全部页面。
 发现溢出时精简文案，不缩小字号。
 ```
@@ -81,8 +90,8 @@ python3 gold-medal-instructor-course-ppt-template/scripts/install_skill.py
 COURSE_SKILL_DIR="$HOME/.dsh/skills/course-ppt-template"
 
 python3 "$COURSE_SKILL_DIR/scripts/run_dsh.py" \
-  --brief "$COURSE_SKILL_DIR/examples/photography-brief.md" \
-  --output "$PWD/outputs/手机摄影入门.pptx" \
+  --brief "$COURSE_SKILL_DIR/examples/rokid-aiui-intro-brief.md" \
+  --output "$PWD/outputs/Rokid AIUI 入门开发.pptx" \
   --model deepseek-flash
 ```
 
@@ -102,6 +111,17 @@ python3 "$COURSE_SKILL_DIR/scripts/run_dsh.py" \
 
 CLI 会在输出目录内的 `.work/dsh-…/` 保存内容 JSON、提示词、日志和运行记录。日志可能包含课程内容，分享技能时不要一起上传。
 
+## 示例：Rokid AIUI 入门开发
+
+随包示例以第一次接触 AIUI 的开发者为对象，覆盖 AIUI Studio、项目与页面结构、最小页面、数据绑定、交互、预览调试及课堂验收。
+
+- [查看或下载 10 页示例 PPT](examples/rokid-aiui-intro.pptx)
+- [课程简报](examples/rokid-aiui-intro-brief.md)
+- [可重建课件的内容 JSON](examples/rokid-aiui-intro-content.json)
+- [AIUI 眼镜演示图提示词](references/aiui-demo-visuals.md#示例提示词rokid-aiui-入门开发)
+
+示例展示的是教学课件，未把代码讲解或预览检查写成已通过设备验收。需要配图时按上面的 AIUI 专用规则处理。
+
 ## 环境与模板选择
 
 已验证环境为 macOS、Python 3.9.6、DSH CLI `0.2.1-rc.5`。模板引擎、安装脚本和 DSH 执行器只用 Python 标准库。画面渲染另需 LibreOffice 和 Poppler，Pillow 仅用于可选的联系图。其他系统、模型入口和 DSH 版本需重新验证。
@@ -120,7 +140,7 @@ DSH 路径会依次尝试显式的 `--dsh-cli`、PATH 中的 `dsh` 和 macOS 应
 COURSE_SKILL_DIR="$HOME/.dsh/skills/course-ppt-template"
 
 python3 "$COURSE_SKILL_DIR/scripts/run_dsh.py" \
-  --brief "$COURSE_SKILL_DIR/examples/photography-brief.md" \
+  --brief "$COURSE_SKILL_DIR/examples/rokid-aiui-intro-brief.md" \
   --output "$PWD/outputs/新课程.pptx" \
   --dsh-cli "/你的DSH路径/dsh" \
   --model deepseek-flash
@@ -135,7 +155,7 @@ python3 "$COURSE_SKILL_DIR/scripts/run_dsh.py" \
 | 可直接生成课件的七页模板 | [assets/template.pptx](assets/template.pptx)，包含通用填写提示 |
 | 模板实际用到的背景和图标 | [assets/images/](assets/images/)，PPTX 内也已包含同一份资源 |
 | Lesson02 原始源稿 | [assets/sources/lesson02-source.pptx](assets/sources/lesson02-source.pptx)，用于重新提取匹配的页面 |
-| 原始讲师 PPT 模板 | [Releases 附件](https://github.com/EasonZhu1997/gold-medal-instructor-course-ppt-template/releases/latest)，约 272 MiB，原文件完整保留 |
+| 原始讲师 PPT 模板 | [Releases 附件](https://github.com/EasonZhu1997/instructor-course-ppt-template-skill/releases/latest)，约 272 MiB，原文件完整保留 |
 | 资源校验与来源记录 | [assets/manifest.json](assets/manifest.json) |
 
 大号原始讲师模板保存在 Releases，日常生成无需下载它。内置模板已经包含所需图片，不依赖本机其他项目目录。素材的权利边界见 [ASSET_NOTICES.md](ASSET_NOTICES.md)。
@@ -185,7 +205,7 @@ python3 "$COURSE_SKILL_DIR/scripts/pptx_engine.py" build \
   --output "$PWD/outputs/通用教学模板.pptx"
 ```
 
-若想编辑内容 JSON，可参考 [摄影示例](examples/photography-content.json) 和 [SKILL.md 的内容格式](SKILL.md#内容文件与生成)。所有非自动槽位必须填写，不能增加未知字段或保留空文字。
+若想编辑内容 JSON，可参考 [AIUI 入门开发示例](examples/rokid-aiui-intro-content.json) 和 [SKILL.md 的内容格式](SKILL.md#内容文件与生成)。所有非自动槽位必须填写，不能增加未知字段或保留空文字。
 
 ## 怎样检查课件
 
@@ -235,7 +255,7 @@ python3 "$COURSE_SKILL_DIR/scripts/render_review.py" \
 
 ## 已验证范围与文件导航
 
-2026-11-05 已使用 DSH `deepseek-flash` 测试手机摄影课、时间管理课，以及两节界面/通讯实操课。真实模型生成后经过内容审校和全页画面检查；这些记录不代表所有新课程都能免审交付。详见 [验证记录](references/validation.md)。
+2026-11-05 已使用 DSH `deepseek-flash` 测试多门通用课程及界面/通讯实操课，发布示例统一采用《Rokid AIUI 入门开发》。真实模型生成后经过内容审校和全页画面检查；这些记录不代表所有新课程都能免审交付。详见 [验证记录](references/validation.md)。
 
 | 文件 | 用途 |
 | --- | --- |
@@ -244,6 +264,7 @@ python3 "$COURSE_SKILL_DIR/scripts/render_review.py" \
 | [profile.json](references/profile.json) | 七类页面、文字槽位和预算 |
 | [设计说明](references/design-notes.md) | 模板来源、参考差异、已知原稿问题 |
 | [实操复核清单](references/practical-course-checks.md) | 界面流转、通讯概念和课堂步骤检查 |
+| [AIUI 演示图说明](references/aiui-demo-visuals.md) | 仅眼镜端画面使用单绿、截图与生成边界及提示词 |
 | [验证记录](references/validation.md) | 本次实际验证范围及限制 |
 | [run_dsh.py](scripts/run_dsh.py) | 调用本机 DSH 生成课件 |
 | [pptx_engine.py](scripts/pptx_engine.py) | 导入模板、填充内容、验证结构 |

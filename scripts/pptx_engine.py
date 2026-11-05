@@ -149,6 +149,15 @@ def load_profile(path):
         if not isinstance(definition.get("slide"), int) or definition["slide"] < 1:
             raise DeckError(f"{layout}: positive source slide number required")
         source_slides.append(definition["slide"])
+        color_map = definition.get("color_map", {})
+        if not isinstance(color_map, dict) or any(
+            not isinstance(old, str) or not re.fullmatch(r"[0-9A-Fa-f]{6}", old)
+            or not isinstance(new, str) or not re.fullmatch(r"[0-9A-Fa-f]{6}", new)
+            for old, new in color_map.items()
+        ):
+            raise DeckError(f"{layout}: color_map must map six-digit HEX colors to six-digit HEX colors")
+        if len({color.upper() for color in color_map}) != len(color_map):
+            raise DeckError(f"{layout}: color_map contains duplicate HEX colors ignoring case")
         slots = definition.get("slots")
         if not isinstance(slots, dict) or not slots:
             raise DeckError(f"{layout}: nonempty slots required")
@@ -398,6 +407,14 @@ def bootstrap(args):
         new = f"ppt/slides/slide{i}.xml"
         root = parse(data)
         remove_shapes(root, definition.get("remove_shapes", []))
+        # Profile authors may adapt a specific source color for a reusable
+        # layout. Recolor only explicit slide RGB values; all geometry,
+        # inherited styling and other color definitions remain untouched.
+        color_map = {old.upper(): new.upper() for old, new in definition.get("color_map", {}).items()}
+        for color in root.findall(".//a:srgbClr", NS):
+            replacement = color_map.get(color.get("val", "").upper())
+            if replacement is not None:
+                color.set("val", replacement)
         check_coverage(root, definition, name)
         parts[new] = xml_bytes(root, data)
         if rels:
@@ -409,7 +426,7 @@ def bootstrap(args):
     for name in list(parts):
         if re.fullmatch(r"ppt/(slideLayouts|slideMasters)/[^/]+\.xml", name):
             parts[name] = clear_inherited_text(parts[name])
-    parts[MANIFEST] = json.dumps({"version": 1, "metadata_sanitized": 1, "source_sha256": sha(Path(args.source).read_bytes()), "profile_sha256": sha(Path(args.profile).read_bytes()), "layouts": list(profile["layouts"]), "source_slides": [d["slide"] for d in profile["layouts"].values()]}, ensure_ascii=False, indent=2).encode()
+    parts[MANIFEST] = json.dumps({"version": 1, "metadata_sanitized": 1, "source_sha256": sha(Path(args.source).read_bytes()), "profile_sha256": sha(Path(args.profile).read_bytes()), "layouts": list(profile["layouts"]), "source_slides": [d["slide"] for d in profile["layouts"].values()], "color_maps": {name: d["color_map"] for name, d in profile["layouts"].items() if d.get("color_map")}}, ensure_ascii=False, indent=2).encode()
     parts = prune(parts)
     for name in list(parts):
         if name.endswith(".xml") and name != "[Content_Types].xml":
