@@ -3,6 +3,7 @@
 
 The bundled template is required. Installing or using this skill does not need
 the original course decks, a Git checkout, or third-party Python packages.
+Backups and staged copies stay outside the destination's skill search root.
 """
 
 from __future__ import annotations
@@ -63,7 +64,8 @@ def arguments() -> argparse.Namespace:
                         default=Path.home() / ".dsh/skills/course-ppt-template",
                         help="Installation directory (default: ~/.dsh/skills/course-ppt-template)")
     parser.add_argument("--replace", action="store_true",
-                        help="Back up an existing destination beside it, then install a fresh copy; never merge")
+                        help="Back up outside the skills root in <dest-parent>/../skill-backups, "
+                             "then install a fresh copy; never merge")
     return parser.parse_args()
 
 
@@ -83,16 +85,28 @@ def main() -> int:
     present = destination.exists() or destination.is_symlink()
     if present and not args.replace:
         raise ValueError(f"Destination already exists: {destination}; use --replace to preserve a backup first")
+    workspace = destination.parent.parent
+    backup_root = workspace / "skill-backups"
+    staging_root = workspace / "skill-install-staging"
+    for directory in (backup_root, staging_root):
+        canonical = directory.resolve()
+        if canonical == source or canonical.is_relative_to(source):
+            raise ValueError(f"Installation workspace must not be inside the source skill: {directory}")
+        if canonical.is_relative_to(destination.parent.resolve()):
+            raise ValueError(f"Installation workspace must stay outside the skills search root: {directory}")
     destination.parent.mkdir(parents=True, exist_ok=True)
-    stage = Path(tempfile.mkdtemp(prefix=f".{destination.name}.install-", dir=destination.parent))
+    staging_root.mkdir(parents=True, exist_ok=True)
+    stage = Path(tempfile.mkdtemp(prefix=f"{destination.name}.install-", dir=staging_root))
     backup: Path | None = None
     try:
         shutil.copytree(source, stage, dirs_exist_ok=True, ignore=ignore_download_outputs)
         validate_skill(stage)
         if present:
+            backup_root.mkdir(parents=True, exist_ok=True)
             stamp = dt.datetime.now(dt.timezone.utc).strftime("%Y%m%dT%H%M%SZ")
-            backup = destination.with_name(f"{destination.name}.backup-{stamp}-{uuid.uuid4().hex[:8]}")
-            destination.rename(backup)
+            backup_candidate = backup_root / f"{destination.name}.backup-{stamp}-{uuid.uuid4().hex[:8]}"
+            destination.rename(backup_candidate)
+            backup = backup_candidate
         try:
             stage.rename(destination)
         except OSError:
