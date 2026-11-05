@@ -42,6 +42,31 @@ def template_path(skill: Path, explicit: Path | None) -> Path:
     return (Path.home() / ".dsh/course-ppt-template/template.pptx").resolve()
 
 
+def skill_roots(skill: Path) -> list[str]:
+    """Expose this skill and narrow, available AIUI dependencies to DSH."""
+    roots = [skill.parent.resolve()]
+    candidates = (
+        skill.parent / "aiui-dev",
+        Path.home() / ".dsh/skills/aiui-dev",
+        Path.home() / ".agents/skills/aiui-dev",
+        Path.home() / ".codex/skills/aiui-dev",
+    )
+    seen = set()
+    for candidate in candidates:
+        if not (candidate / "SKILL.md").is_file():
+            continue
+        resolved = candidate.resolve()
+        if resolved in seen:
+            continue
+        seen.add(resolved)
+        # A direct child is already discoverable through the existing root.
+        if candidate.parent.resolve() not in roots and resolved not in roots:
+            roots.append(resolved)
+        # Prefer one maintained dependency instead of exposing duplicate names.
+        break
+    return [str(root) for root in roots]
+
+
 def execute(command: list[str], cwd: Path, work: Path, timeout: float,
             stem: str, stdin: str | None = None) -> int:
     """Keep child logs private and terminate its process group on timeout."""
@@ -119,6 +144,7 @@ def main() -> int:
     work.chmod(0o700)
     content = work / "content.json"
     patch = work / "headless.patch.json"
+    discovery_roots = skill_roots(skill)
     entries = [
         {"id": "authorization", "disabled": False},
         {"id": "credentials", "disabled": False},
@@ -127,7 +153,7 @@ def main() -> int:
             "provider": "deepseek-account", "model": args.model, "reasoningEffort": "high",
         }},
         {"id": "skill-filesystem", "config": {
-            "includeDefaultRoots": False, "customSkillDirs": [str(skill.parent)], "watch": False,
+            "includeDefaultRoots": False, "customSkillDirs": discovery_roots, "watch": False,
         }},
         {"id": "session-title-llm", "disabled": True},
         {"id": "session-telemetry-otel", "disabled": True},
@@ -140,7 +166,9 @@ def main() -> int:
                 "--profile", str(profile), "--content", str(content), "--template", str(template)]
     prompt = f"""请使用本机 course-ppt-template skill 完成一次真实课件生成。
 先通过原生 skill 工具加载 course-ppt-template；若未列出，用 read 读取 {skill / 'SKILL.md'}。
-只读取本次 skill、模板、profile 和课程简报。不要读取凭据、账号、其他聊天或修改 DSH 配置。
+可读取本次课件 skill、它明确引用的 AIUI 开发依赖及其必要 references、模板、profile 和课程简报。
+若本课实际主题涉及 AIUI/aiui、AIUI Studio、Rokid AIUI 或明确的 AIUI .ink 开发，必须先通过原生 skill 工具加载 aiui-dev，再按主题读取相应资料，之后才编写技术提纲与文案。
+普通课程、明确排除 AIUI 的课程不加载该依赖。不要读取凭据、账号、其他聊天或修改 DSH 配置；也不要因加载技术资料就运行或发布 AIUI 项目。
 课程简报文件：{brief}
 模板文件：{template}
 版式契约：{profile}
@@ -165,6 +193,7 @@ validate argv: {json.dumps(validate, ensure_ascii=False)}
         "provider": "deepseek-account", "model": args.model, "dsh_cli": str(dsh),
         "brief": str(brief), "template": str(template), "skill": str(skill),
         "output": str(output), "content": str(content), "command": command,
+        "skill_discovery_roots": discovery_roots,
     }
     (work / "run.json").write_text(json.dumps(metadata, ensure_ascii=False, indent=2) + "\n",
                                    encoding="utf-8")
@@ -177,6 +206,8 @@ validate argv: {json.dumps(validate, ensure_ascii=False)}
     metadata["dsh_exit_code"] = result
     failed_turn = False
     session_id = None
+    skill_calls = {}
+    loaded_skills = []
     for line in (work / "dsh.stdout.jsonl").read_text(encoding="utf-8").splitlines():
         try:
             event = json.loads(line)
@@ -184,9 +215,16 @@ validate argv: {json.dumps(validate, ensure_ascii=False)}
             continue
         if event.get("type") == "session":
             session_id = event.get("sessionId")
+        if event.get("type") == "tool_call" and event.get("tool") == "skill":
+            skill_calls[event.get("callId")] = event.get("input", {}).get("name")
+        if event.get("type") == "tool_result" and event.get("status") == "completed":
+            name = skill_calls.get(event.get("callId"))
+            if name and name not in loaded_skills:
+                loaded_skills.append(name)
         if event.get("type") == "status" and event.get("phase") == "turn_end":
             failed_turn |= event.get("reason", {}).get("kind") != "completed"
     metadata["session_id"] = session_id
+    metadata["native_loaded_skills"] = loaded_skills
     metadata["dsh_failed_turn"] = failed_turn
     metadata["independent_validate_exit_code"] = None
     if result == 0 and not failed_turn and output.is_file() and content.is_file():

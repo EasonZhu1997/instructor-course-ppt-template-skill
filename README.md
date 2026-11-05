@@ -10,7 +10,7 @@
 
 技能已内置七种可编辑版式、所需图片和可重新提取模板的 Lesson02 源文件。首次使用无需自行寻找原课件。
 
-[下载完整技能 ZIP](https://github.com/EasonZhu1997/instructor-course-ppt-template-skill/releases/latest/download/course-ppt-template.zip) · [下载原始讲师模板及查看发布说明](https://github.com/EasonZhu1997/instructor-course-ppt-template-skill/releases/latest)
+[下载完整技能 ZIP](https://github.com/EasonZhu1997/instructor-course-ppt-template-skill/releases/latest/download/course-ppt-template.zip) · [下载原始讲师模板](https://github.com/EasonZhu1997/instructor-course-ppt-template-skill/releases/download/v1.0.0/lecturer-original-template.pptx) · [查看发布说明](https://github.com/EasonZhu1997/instructor-course-ppt-template-skill/releases/latest)
 
 ![七种通用教学版式预览](assets/preview.png)
 
@@ -43,7 +43,7 @@ flowchart LR
 2. 运行安装命令，复制完整技能到 DSH 用户技能目录：
 
    ```bash
-   python3 course-ppt-template/scripts/install_skill.py
+   python3 course-ppt-template/scripts/install_skill.py --with-aiui
    ```
 
 3. 打开已登录的 DSH，选择可用的 `deepseek-flash`，按下方示例给出课程要求。
@@ -54,8 +54,38 @@ flowchart LR
 
 ```bash
 git clone https://github.com/EasonZhu1997/instructor-course-ppt-template-skill.git
-python3 instructor-course-ppt-template-skill/scripts/install_skill.py
+python3 instructor-course-ppt-template-skill/scripts/install_skill.py --with-aiui
 ```
+
+## AIUI 自动触发与知识联动
+
+AIUI 课程会同时使用两个技能：`course-ppt-template` 负责教学与版式，`aiui-dev` 负责真实开发契约。安装时的 `--with-aiui` 会复用本机现有的 AIUI 技能；找不到时从上游固定版本取得（需要 Git 和网络）。上游内容不被重新打包或套用本仓库许可。只做普通课程时可以省略这个选项。
+
+已经装过旧版的用户可以运行：
+
+```bash
+python3 course-ppt-template/scripts/install_skill.py --replace --with-aiui
+```
+
+之后可自然提问，无需每次点名技能，例如：
+
+```text
+为《Rokid aiui 入门开发》拟3页课件提纲，讲页面结构和问候文字更新。
+```
+
+AIUI、aiui、AIUI Studio 和明确的 `.ink` 页面教学会进入技术联动：先加载 `aiui-dev`，再按任务读取 framework、事件、组件、样式或 API 文档。只问 AIUI 开发代码而不需要教学材料时，直接使用开发技能；普通课程和明确排除 AIUI 的请求不应额外加载它。AIUI 知识联动不等于把课件改绿，眼镜画面配色仍按下一节的目标边界处理。
+
+本次八条自然请求实测：AIUI 教学知识联动 4/4，普通或排除 AIUI 的请求无误触发 3/3，纯开发问题只用 AIUI 技能 1/1。完整功能矩阵为 6/8，另两条普通提纲直接回答、没有加载课件技能；不宣称所有请求都必定触发。详见 [实测记录](references/aiui-routing-validation.md)。
+
+依赖状态可检查：
+
+```bash
+python3 "$HOME/.dsh/skills/course-ppt-template/scripts/install_aiui_dependency.py"
+```
+
+有效依赖会显示 `AIUI ready` 并直接复用。执行器的 `run.json` 新增 `native_loaded_skills`，记录成功的原生技能加载；敏感度验收还要结合实际文档读取，不能只凭最终回答里一句“已使用”。需要从特定目录安装时用 `--source`，没有本机源时可用 `--download` 取得固定上游版本。已有有效 `aiui-dev` 不会默认被替换；确需替换时才加 `--replace`。
+
+DSH 的默认技能监视器通常会在下一次请求刷新目录。旧对话若已经加载过旧正文，可发送 `/course-ppt-template`、`/aiui-dev` 重新加载，或新建对话测试；此后无需每次手动点名。
 
 ## 已安装后怎样调用
 
@@ -124,7 +154,7 @@ CLI 会在输出目录内的 `.work/dsh-…/` 保存内容 JSON、提示词、�
 
 ## 环境与模板选择
 
-已验证环境为 macOS、Python 3.9.6、DSH CLI `0.2.1-rc.5`。模板引擎、安装脚本和 DSH 执行器只用 Python 标准库。画面渲染另需 LibreOffice 和 Poppler，Pillow 仅用于可选的联系图。其他系统、模型入口和 DSH 版本需重新验证。
+已验证环境为 macOS、Python 3.9.6；原课件生成验证使用 DSH CLI `0.2.1-rc.5`，本次 AIUI 自动触发验证使用本机当前的 `0.2.2-rc.1`。模板引擎、安装脚本和 DSH 执行器只用 Python 标准库。画面渲染另需 LibreOffice 和 Poppler，Pillow 仅用于可选的联系图。其他系统、模型入口和 DSH 版本需重新验证。
 
 执行器按下面的顺序选择模板：
 
@@ -155,10 +185,10 @@ python3 "$COURSE_SKILL_DIR/scripts/run_dsh.py" \
 | 可直接生成课件的七页模板 | [assets/template.pptx](assets/template.pptx)，包含通用填写提示 |
 | 模板实际用到的背景和图标 | [assets/images/](assets/images/)，PPTX 内也已包含同一份资源 |
 | Lesson02 原始源稿 | [assets/sources/lesson02-source.pptx](assets/sources/lesson02-source.pptx)，用于重新提取匹配的页面 |
-| 原始讲师 PPT 模板 | [Releases 附件](https://github.com/EasonZhu1997/instructor-course-ppt-template-skill/releases/latest)，约 272 MiB，原文件完整保留 |
+| 原始讲师 PPT 模板 | [v1.0 原始附件](https://github.com/EasonZhu1997/instructor-course-ppt-template-skill/releases/download/v1.0.0/lecturer-original-template.pptx)，约 272 MiB，原文件完整保留 |
 | 资源校验与来源记录 | [assets/manifest.json](assets/manifest.json) |
 
-大号原始讲师模板保存在 Releases，日常生成无需下载它。内置模板已经包含所需图片，不依赖本机其他项目目录。素材的权利边界见 [ASSET_NOTICES.md](ASSET_NOTICES.md)。
+大号原始讲师模板保存在 v1.0 Release（后续版本继续引用同一原件），日常生成无需下载它。内置模板已经包含所需图片，不依赖本机其他项目目录。素材的权利边界见 [ASSET_NOTICES.md](ASSET_NOTICES.md)。
 
 ### 需要重新提取模板时
 
@@ -241,6 +271,7 @@ python3 "$COURSE_SKILL_DIR/scripts/render_review.py" \
 
 | 遇到的情况 | 处理方法 |
 | --- | --- |
+| 提到 AIUI 但没有知识联动 | 检查 DSH 是否能发现 `aiui-dev`，执行 `--with-aiui` 安装；旧对话重新加载一次技能，不能只检查标题是否出现 AIUI |
 | 提示没有模板 | 检查是否下载、解压并安装了完整技能包，`assets/template.pptx` 应存在；不要只复制 SKILL.md |
 | 模板与 profile 不兼容 | 重新安装同一发布版本的完整文件，或用随包源稿重新提取，不混用不同版本 |
 | 提示缺少、未知或空槽位 | 按 profile 补齐该页全部非自动字段，删除多余字段 |
@@ -264,10 +295,14 @@ python3 "$COURSE_SKILL_DIR/scripts/render_review.py" \
 | [profile.json](references/profile.json) | 七类页面、文字槽位和预算 |
 | [设计说明](references/design-notes.md) | 模板来源、参考差异、已知原稿问题 |
 | [实操复核清单](references/practical-course-checks.md) | 界面流转、通讯概念和课堂步骤检查 |
+| [AIUI 联动说明](references/aiui-routing.md) | 自然触发、依赖安装、按需读取知识与误触发边界 |
+| [AIUI 触发实测](references/aiui-routing-validation.md) | 升级前缺依赖、升级后正反例与完整矩阵结果 |
+| [AIUI 自然提问测试](references/aiui-routing-tests.json) | 不强制技能名的正反例测试 |
+| [install_aiui_dependency.py](scripts/install_aiui_dependency.py) | 从本机或固定上游安装真实 AIUI 开发技能 |
 | [AIUI 演示图说明](references/aiui-demo-visuals.md) | 仅眼镜端画面使用单绿、截图与生成边界及提示词 |
 | [验证记录](references/validation.md) | 本次实际验证范围及限制 |
 | [run_dsh.py](scripts/run_dsh.py) | 调用本机 DSH 生成课件 |
 | [pptx_engine.py](scripts/pptx_engine.py) | 导入模板、填充内容、验证结构 |
 | [render_review.py](scripts/render_review.py) | 导出 PDF/PNG 供画面复核 |
 
-仓库随包提供经本次授权分享的课件模板、所需图片及指定源稿；原始讲师模板另附于 Releases。代码采用 [MIT License](LICENSE)，课件、品牌图形与第三方素材保留各自权利，详见 [素材说明](ASSET_NOTICES.md)。不包含登录凭据、字体安装包或用户后续课程及运行日志。
+仓库随包提供经本次授权分享的课件模板、所需图片及指定源稿；原始讲师模板另附于 Releases。代码采用 [MIT License](LICENSE)，AIUI 上游依赖、课件、品牌图形与第三方素材保留各自权利，详见 [素材说明](ASSET_NOTICES.md)。不包含登录凭据、字体安装包或用户后续课程及运行日志。

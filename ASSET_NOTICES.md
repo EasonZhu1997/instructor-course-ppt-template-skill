@@ -21,3 +21,8 @@
 资源的 SHA-256 与媒体部件对应关系见 `assets/manifest.json`。本仓库不附带字体安装包、DSH 登录信息或模型密钥。
 
 普通使用无需修改模板内部 XML。要换成自己的品牌设计，应先使用有权使用的源稿，再重新建立页面槽位与文字预算并验证画面。
+
+
+## AIUI 开发技能依赖
+
+AIUI 课程联动使用外部 `aiui-dev`，来源为 [jsar-project/AIUI](https://github.com/jsar-project/AIUI/tree/07db37b3f3ea44cc4efe669cd3456b0221195189/skills/aiui-dev)。本仓库只附安装与路由代码，不附带或重新许可上游技能全文。安装时复用使用者本机已有副本，或从固定上游提交稀疏取得，并记录简洁来源。当前未假定该上游具有本仓库的 MIT 许可。

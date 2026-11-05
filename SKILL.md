@@ -1,16 +1,28 @@
 ---
 name: course-ppt-template
-description: 制作可编辑的讲师课程 PPTX，使用固定教学模板和文字槽保持版式一致。适用于 DSH Flash 根据课程大纲制作课件与教学模板；讲解 Rokid AIUI 单绿眼镜界面时可辅助准备或生成演示图，绿色仅用于该眼镜端画面。
+description: 为课程、教学大纲、PPT提纲、课件和讲师模板制作可编辑PPTX。讲授 AIUI/aiui、AIUI Studio、Rokid AIUI、.ink 页面或 AIUI 眼镜界面时，使用本技能组织教学，并先加载 aiui-dev 核对技术知识。普通课程也适用；只问代码或API而不需要教学材料时，使用aiui-dev，不启动PPT流程。
 ---
 
 # 讲师课程 PPT 模版 Skill
 
 把课程内容写入固定教学版式。模型负责教学组织与短文案，`scripts/pptx_engine.py` 负责 OOXML 页面克隆、文字替换与结构验证。交付普通可编辑 `.pptx`，不把整页截图当课件。
 
+## AIUI 课程自动联动
+
+先判断本次真正要讲的课程主题。用户只要提出 AIUI、aiui、AIUI Studio、Rokid AIUI，或明确属于 AIUI 的 `.ink` / `app.json` / Page 绑定与眼镜界面教学，就进入 AIUI 路线，不要求用户再说“调用 AIUI skill”。大小写不影响判断；被否定、排除的主题或无关历史提及不算本课主题。
+
+**在写 AIUI 课件提纲、讲稿或代码说明之前，先用宿主原生 skill 工具加载 `aiui-dev`，再读取与本课匹配的 references。** 只有“AIUI”标题或绿色配图不能代替开发知识技能。按 [AIUI 联动说明](references/aiui-routing.md) 选择项目结构、事件、组件、样式或 API 文档，不把整套文档一次全部读入。
+
+若列表没有 `aiui-dev`，先检查依赖是否安装：`python3 SKILL_DIR/scripts/install_aiui_dependency.py` 可复用本机已有源；无本机源时按 README 的 `--with-aiui` 安装流程取得依赖。宿主没有原生 skill 工具时，可以直接读取已安装 `aiui-dev/SKILL.md` 及其相对资料，但必须确实读取，不能口头声称已加载。缺少依赖且无法取得时，要说明技术知识尚未核对，不凭记忆编造 API。
+
+普通课程不额外加载 AIUI 文档。纯 AIUI 开发问答直接交给 `aiui-dev`；Rokid 的 CXR/Android 等其他路线不能仅因涉及眼镜就套用 AIUI 文档。保持任务范围，不因技术技能被加载就擅自创建、导入或发布 AIUI 应用。
+
 ## 开始
 
+用户只要教学提纲或讲解要点时，完成知识核对后直接回答，不创建文件或启动 PPT 构建。只有进入实际排版/生成阶段才读取完整 profile 并运行生成与渲染命令。
+
 1. 读取用户讲稿，保留指定课程名、对象、时长、总页数及内容边界。缺少非关键资料可用明确的教学假设，不编造产品参数、实测结果或来源。
-2. 读取本技能的 `references/profile.json`。其中每个 layout 的 `slots` 是唯一允许填写的字段；`max_chars` 包括标点和换行，`max_lines` 是显式行数上限，`max_chars_per_line` 限制每一行的字符数。有 `auto` 的槽由脚本填写，内容 JSON 中不要传这些字段。
+2. 实际排版时读取本技能的 `references/profile.json`。其中每个 layout 的 `slots` 是唯一允许填写的字段；`max_chars` 包括标点和换行，`max_lines` 是显式行数上限，`max_chars_per_line` 限制每一行的字符数。有 `auto` 的槽由脚本填写，内容 JSON 中不要传这些字段。
 3. 界面或网络实操课另读 `references/practical-course-checks.md`，逐项核对课表覆盖、状态一致性和可跟随的操作步骤。
 4. 使用用户显式指定的 `--template`；未指定时优先使用本技能 `assets/template.pptx`，不存在才回退到 `~/.dsh/course-ppt-template/template.pptx`。完整发布包已含模板和图片，不要求用户另外提供原课件。若两者都缺失，先检查是否安装了完整技能，再按下文从随包源稿重新提取。
 

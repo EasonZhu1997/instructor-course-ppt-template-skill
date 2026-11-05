@@ -1,5 +1,5 @@
 {
-  "version": "1.0.0",
+  "version": "1.1.0",
   "template": "assets/template.pptx",
   "profile": "references/profile.json",
   "template_sha256": "070d2e948d3cae511666b6f073a8e75a2325c48d70f61d004565e46218cd3b04",
@@ -28,5 +28,12 @@
     "pptx": "examples/rokid-aiui-intro.pptx",
     "content_sha256": "c72d351d459adc700aba16c6a43b2718c559c6cc86c8b2137f8ef296b16f3902",
     "pptx_sha256": "f07bde33942652b0f8cb0f1e64579ece5dc7db663e5d76eaaa97e10aaefc68fc"
+  },
+  "aiui_dependency": {
+    "name": "aiui-dev",
+    "bundled": false,
+    "installation": "scripts/install_skill.py --with-aiui",
+    "upstream": "https://github.com/jsar-project/AIUI",
+    "commit": "07db37b3f3ea44cc4efe669cd3456b0221195189"
   }
 }

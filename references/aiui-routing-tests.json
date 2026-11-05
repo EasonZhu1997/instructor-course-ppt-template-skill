@@ -1,0 +1,157 @@
+{
+  "version": 1,
+  "purpose": "Natural AIUI course routing smoke tests; exact prompts contain no skill names. Native skill calls and real reference reads are required evidence.",
+  "harness": {
+    "provider": "deepseek-account",
+    "model": "deepseek-flash",
+    "reasoningEffort": "high"
+  },
+  "cases": [
+    {
+      "id": "T01",
+      "kind": "positive_course_aiui",
+      "pair": "case_sensitive_pair",
+      "prompt": "为《Rokid AIUI 入门开发》拟3页课件提纲，面向初学者，讲页面结构与问候文字更新。只给每页标题和要点，不超过250字，不生成任何文件或图片。",
+      "covers": [
+        "AIUI",
+        "Rokid AIUI"
+      ],
+      "expected_native_skill_order": [
+        "course-ppt-template",
+        "aiui-dev"
+      ],
+      "forbidden_native_skills": [],
+      "expected_aiui_reference_reads": [
+        "references/framework.md"
+      ],
+      "no_pptx_or_image_generation": true
+    },
+    {
+      "id": "T02",
+      "kind": "positive_course_aiui",
+      "pair": "case_sensitive_pair",
+      "prompt": "为《Rokid aiui 入门开发》拟3页课件提纲，面向初学者，讲页面结构与问候文字更新。只给每页标题和要点，不超过250字，不生成任何文件或图片。",
+      "covers": [
+        "aiui",
+        "Rokid aiui"
+      ],
+      "expected_native_skill_order": [
+        "course-ppt-template",
+        "aiui-dev"
+      ],
+      "forbidden_native_skills": [],
+      "expected_aiui_reference_reads": [
+        "references/framework.md"
+      ],
+      "no_pptx_or_image_generation": true
+    },
+    {
+      "id": "T03",
+      "kind": "positive_course_aiui",
+      "prompt": "给《AIUI Studio 上手》拟3页PPT提纲，讲项目结构、页面声明和预览后的检查。只给标题与讲解要点，不超过250字，不生成任何文件或图片。",
+      "covers": [
+        "AIUI Studio"
+      ],
+      "expected_native_skill_order": [
+        "course-ppt-template",
+        "aiui-dev"
+      ],
+      "forbidden_native_skills": [],
+      "expected_aiui_reference_reads": [
+        "references/framework.md"
+      ],
+      "no_pptx_or_image_generation": true
+    },
+    {
+      "id": "T04",
+      "kind": "positive_course_aiui_visual",
+      "prompt": "给“.ink 页面与眼镜界面”入门课拟3页PPT提纲，讲 app.json 的页面声明、setData 更新问候和单绿显示。只给标题与要点，不超过250字，不生成任何文件或图片。",
+      "covers": [
+        "隐含AIUI：.ink",
+        "眼镜界面",
+        "app.json",
+        "setData",
+        "单绿"
+      ],
+      "expected_native_skill_order": [
+        "course-ppt-template",
+        "aiui-dev"
+      ],
+      "forbidden_native_skills": [],
+      "expected_aiui_reference_reads": [
+        "references/framework.md",
+        "references/design/monochrome-green.md"
+      ],
+      "no_pptx_or_image_generation": true
+    },
+    {
+      "id": "T05",
+      "kind": "negative_aiui_general_course",
+      "prompt": "为《手机摄影入门》拟3页PPT提纲，讲主体、光线和背景，面向零基础学员。只给标题和要点，不超过250字，不生成任何文件或图片。",
+      "covers": [
+        "普通摄影课件"
+      ],
+      "expected_native_skill_order": [
+        "course-ppt-template"
+      ],
+      "forbidden_native_skills": [
+        "aiui-dev"
+      ],
+      "expected_aiui_reference_reads": [],
+      "no_pptx_or_image_generation": true
+    },
+    {
+      "id": "T06",
+      "kind": "negative_aiui_general_course",
+      "prompt": "为《HTTPS基础》拟3页课件提纲，讲请求、响应与超时，采用通用网页客户端示例。只给标题和要点，不超过250字，不生成任何文件或图片。",
+      "covers": [
+        "普通HTTPS课件"
+      ],
+      "expected_native_skill_order": [
+        "course-ppt-template"
+      ],
+      "forbidden_native_skills": [
+        "aiui-dev"
+      ],
+      "expected_aiui_reference_reads": [],
+      "no_pptx_or_image_generation": true
+    },
+    {
+      "id": "T07",
+      "kind": "negative_course_aiui_code",
+      "prompt": "AIUI 的 .ink Page 怎样用 setData 更新一行问候文字？请解释数据绑定和状态更新，只回答开发问题，不超过250字，不制作课件、文件或图片。",
+      "covers": [
+        "普通AIUI代码问题",
+        ".ink",
+        "setData"
+      ],
+      "expected_native_skill_order": [
+        "aiui-dev"
+      ],
+      "forbidden_native_skills": [
+        "course-ppt-template"
+      ],
+      "expected_aiui_reference_reads": [
+        "references/framework.md"
+      ],
+      "no_pptx_or_image_generation": true
+    },
+    {
+      "id": "T08",
+      "kind": "negative_aiui_explicit_negation",
+      "prompt": "做《手机摄影入门》的3页PPT提纲，讲主体、光线和背景。这次不讲AIUI，也不展示眼镜界面。只给标题和要点，不超过250字，不生成任何文件或图片。",
+      "covers": [
+        "否定AIUI",
+        "否定眼镜界面"
+      ],
+      "expected_native_skill_order": [
+        "course-ppt-template"
+      ],
+      "forbidden_native_skills": [
+        "aiui-dev"
+      ],
+      "expected_aiui_reference_reads": [],
+      "no_pptx_or_image_generation": true
+    }
+  ]
+}

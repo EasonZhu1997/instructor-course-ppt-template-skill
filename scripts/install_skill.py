@@ -14,6 +14,7 @@ import json
 import os
 from pathlib import Path
 import shutil
+import subprocess
 import sys
 import tempfile
 import uuid
@@ -66,7 +67,26 @@ def arguments() -> argparse.Namespace:
     parser.add_argument("--replace", action="store_true",
                         help="Back up outside the skills root in <dest-parent>/../skill-backups, "
                              "then install a fresh copy; never merge")
+    parser.add_argument("--with-aiui", action="store_true",
+                        help="Also prepare sibling aiui-dev for AIUI course enhancement; "
+                             "reuse a local copy or fetch the pinned upstream dependency if missing")
     return parser.parse_args()
+
+
+def install_aiui(destination: Path) -> int:
+    installer = destination / "scripts/install_aiui_dependency.py"
+    if not installer.is_file():
+        print("AIUI failed: installed course skill lacks its dependency installer; "
+              "course installation is retained", file=sys.stderr)
+        return 1
+    result = subprocess.run([sys.executable, str(installer), "--dest",
+                             str(destination.parent / "aiui-dev"), "--download"])
+    if result.returncode:
+        print("AIUI enhancement failed; the course skill remains installed and usable "
+              "for ordinary PPT courses", file=sys.stderr)
+        return result.returncode if result.returncode > 0 else 1
+    print("AIUI enhancement ready")
+    return 0
 
 
 def main() -> int:
@@ -77,7 +97,7 @@ def main() -> int:
     validate_skill(source)
     if canonical_destination == source:
         print(f"Already installed and validated: {destination}")
-        return 0
+        return install_aiui(destination) if args.with_aiui else 0
     if canonical_destination.is_relative_to(source):
         raise ValueError("Destination must not be inside the source skill directory")
     if source.is_relative_to(canonical_destination):
@@ -124,7 +144,7 @@ def main() -> int:
     print(f"Installed and validated: {destination}")
     if backup is not None:
         print(f"Previous installation preserved at: {backup}")
-    return 0
+    return install_aiui(destination) if args.with_aiui else 0
 
 
 if __name__ == "__main__":
