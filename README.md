@@ -2,17 +2,21 @@
 
 **Instructor Course PPT Template Skill**
 
+版本 **1.2.0**：九种教学页型，支持按大纲规划图片/视频并填入受控媒体槽。
+
+下载的 GitHub 版本已包含媒体槽、规划与收集脚本，以及可重建的图文视频示例。更新本机旧版后即可使用。
+
 让 DSH 根据课程讲稿生成可编辑的 PPTX，并沿用 Lesson 教学版的蓝紫版式。
 
-模型负责组织教学内容和编写文案，脚本负责复用原页面、填入文字及检查模板一致性。适合已有课程表、讲稿或教学大纲，希望制作统一风格课件的场景。
+模型负责组织教学内容、文案及媒体计划，脚本负责复用原页面、填入文字和本地媒体、检查模板一致性。适合已有课程表、讲稿或教学大纲，希望制作统一风格课件的场景。
 
 **日常使用看本页；AI 助手执行时读取 [SKILL.md](SKILL.md)。**
 
-技能已内置七种可编辑版式、所需图片和可重新提取模板的 Lesson02 源文件。首次使用无需自行寻找原课件。
+技能已内置九种可编辑版式、所需背景图片和可重新提取模板的 Lesson02 源文件。首次使用无需自行寻找原课件。
 
 [下载完整技能 ZIP](https://github.com/EasonZhu1997/instructor-course-ppt-template-skill/releases/latest/download/course-ppt-template.zip) · [下载原始讲师模板](https://github.com/EasonZhu1997/instructor-course-ppt-template-skill/releases/download/v1.0.0/lecturer-original-template.pptx) · [查看发布说明](https://github.com/EasonZhu1997/instructor-course-ppt-template-skill/releases/latest)
 
-![七种通用教学版式预览](assets/preview.png)
+![通用教学版式与图片视频槽预览](assets/preview.png)
 
 ## 先看使用流程
 
@@ -20,8 +24,11 @@
 flowchart LR
     A[课程简报] --> B[DSH 编写教学内容]
     B --> C[检查文字槽位与字数]
+    B --> M[按需规划图片与视频]
+    M --> N[宿主工具生成或使用已有素材]
     T[技能内置模板] --> D[脚本生成可编辑 PPTX]
     C --> D
+    N --> D
     D --> E[结构验证]
     E --> F[渲染并查看全部页面]
     F --> G[修改文案并交付]
@@ -35,7 +42,7 @@ flowchart LR
 
 优先采用实际截图或预览截图。宿主有图片生成工具时，可生成明确标注的教学概念图；没有绘图工具时，提供可复制提示词并说明尚未成图。`deepseek-flash` 的文字生成能力本身不等于图片生成能力。
 
-当前固定版式引擎只有文字槽，辅助图作为独立配套素材交付，不会自动覆盖 PPT 中的文字或装饰。需要图片入稿时，应使用明确的图片槽或独立编辑流程，再检查完整页面。详见 [AIUI 演示图说明与 Hello AIUI 提示词](references/aiui-demo-visuals.md)。
+`image_explainer` 和 `video_explainer` 提供明确媒体框，分别接受图片和带封面的视频，不覆盖原有文字或装饰。媒体计划、提示词、旁白文案和分镜需要由宿主工具实际生成素材后才能入稿。详见 [媒体槽与计划流程](references/media-slots.md) 及 [AIUI 演示图说明与 Hello AIUI 提示词](references/aiui-demo-visuals.md)。
 
 ## 三步开始使用
 
@@ -105,7 +112,8 @@ DSH 的默认技能监视器通常会在下一次请求刷新目录。旧对话�
 交付：可编辑PPTX。
 
 使用技能内置模板，保持课程版式。
-若需要AIUI眼镜端画面，可辅助生成单绿界面示意图；只在该屏幕区域用绿色。
+若需要配图或视频，先按大纲生成媒体计划，再调用当前宿主的相应工具生成素材并入槽。
+若画面是AIUI眼镜端界面，只在该屏幕区域用单绿；普通课件保持模板配色。
 请读取完整SKILL.md，生成后执行结构验证，渲染并检查全部页面。
 发现溢出时精简文案，不缩小字号。
 ```
@@ -141,6 +149,39 @@ python3 "$COURSE_SKILL_DIR/scripts/run_dsh.py" \
 
 CLI 会在输出目录内的 `.work/dsh-…/` 保存内容 JSON、提示词、日志和运行记录。日志可能包含课程内容，分享技能时不要一起上传。
 
+## 从大纲到图片、视频课件
+
+媒体流程把文字计划和实际文件分开。下面使用随包的《Rokid AIUI 入门开发》媒体大纲：
+
+```bash
+COURSE_SKILL_DIR="$HOME/.dsh/skills/course-ppt-template"
+COURSE_MEDIA_DIR="$PWD/outputs/AIUI媒体计划"
+
+python3 "$COURSE_SKILL_DIR/scripts/plan_course_media.py" plan \
+  --outline "$COURSE_SKILL_DIR/examples/rokid-aiui-media-outline.json" \
+  --profile "$COURSE_SKILL_DIR/references/profile.json" \
+  --out "$COURSE_MEDIA_DIR"
+```
+
+计划目录必须是新目录。它包含 `media-plan.md`、`media-plan.json`、`content.planned.json` 和素材目录。图片提示词、视频旁白文案和分镜都在计划中；该命令不调用图片、视频或语音模型。
+
+让当前宿主的图片/视频工具按任务生成素材，或使用你有权使用的已有素材，放到计划列出的文件位置。视频需为 H.264 MP4，并提供比例匹配的 PNG/JPEG 封面。随后收集素材并生成课件：
+
+```bash
+python3 "$COURSE_SKILL_DIR/scripts/plan_course_media.py" collect \
+  --plan "$COURSE_MEDIA_DIR/media-plan.json"
+
+python3 "$COURSE_SKILL_DIR/scripts/pptx_engine.py" build \
+  --template "$COURSE_SKILL_DIR/assets/template.pptx" \
+  --profile "$COURSE_SKILL_DIR/references/profile.json" \
+  --content "$COURSE_MEDIA_DIR/content.ready.json" \
+  --output "$PWD/outputs/AIUI图文视频课件.pptx"
+```
+
+`collect` 只确认本地文件齐备，返回 `assets_collected`，保留 `delivery_ready: false`；格式、比例与文件哈希由引擎再检查。PNG 可用标准库检查，JPEG 完整解码需 Pillow，未安装时使用 PNG。视频 build/validate 需要 `ffprobe`，自动查找失败时加 `--ffprobe /实际路径/ffprobe`。已有视频缺封面时，可以给 `collect` 加 `--make-posters`，这一步另需 `ffmpeg`，可用 `--ffmpeg` 指定路径。
+
+媒体未生成时，可以对 `content.planned.json` 使用 `build --allow-pending-media` 查看草稿，独立 `validate` 也必须加同一开关。规划器会让可见图注以“待补图片/待补视频”开头，引擎也检查此前缀；此时 `delivery_ready` 为 `false`，不能当作媒体课件已完成。最终课件先补齐素材，再按下文做结构、画面与目标软件播放检查。完整格式和命令见 [媒体槽说明](references/media-slots.md)。
+
 ## 示例：Rokid AIUI 入门开发
 
 随包示例以第一次接触 AIUI 的开发者为对象，覆盖 AIUI Studio、项目与页面结构、最小页面、数据绑定、交互、预览调试及课堂验收。
@@ -149,12 +190,19 @@ CLI 会在输出目录内的 `.work/dsh-…/` 保存内容 JSON、提示词、�
 - [课程简报](examples/rokid-aiui-intro-brief.md)
 - [可重建课件的内容 JSON](examples/rokid-aiui-intro-content.json)
 - [AIUI 眼镜演示图提示词](references/aiui-demo-visuals.md#示例提示词rokid-aiui-入门开发)
+- [图片与视频媒体大纲](examples/rokid-aiui-media-outline.json)
+- [媒体入槽内容 JSON](examples/rokid-aiui-media-content.json)
+- [图片与视频课件示例](examples/rokid-aiui-media-demo.pptx)
 
 示例展示的是教学课件，未把代码讲解或预览检查写成已通过设备验收。需要配图时按上面的 AIUI 专用规则处理。
 
+媒体示例使用 `examples/media/hello-aiui.html` 制作的 HTML 概念状态画面及对应 PNG、MP4，演示“Hello AIUI”到更新问候的状态变化。它是独立课程概念素材，不能称为 AIUI 运行结果或真机录屏。MP4 没有旁白音轨，大纲中的旁白文案和分镜仍是制作计划。目标软件实际播放情况以验证记录为准。
+
 ## 环境与模板选择
 
-已验证环境为 macOS、Python 3.9.6；原课件生成验证使用 DSH CLI `0.2.1-rc.5`，本次 AIUI 自动触发验证使用本机当前的 `0.2.2-rc.1`。模板引擎、安装脚本和 DSH 执行器只用 Python 标准库。画面渲染另需 LibreOffice 和 Poppler，Pillow 仅用于可选的联系图。其他系统、模型入口和 DSH 版本需重新验证。
+离线回归检查：`python3 course-ppt-template/scripts/test_media_slots.py`。随包素材和源稿可完成 11 项检查；视频检查需 `ffprobe`，缺少时会明确跳过。它不调用模型、不使用账号，也不代替画面和播放复核。
+
+已验证环境为 macOS、Python 3.9.6；原课件生成验证使用 DSH CLI `0.2.1-rc.5`，本次 AIUI 自动触发验证使用本机当前的 `0.2.2-rc.1`。文本/PNG 引擎、媒体规划、安装脚本和 DSH 执行器使用 Python 标准库；JPEG 完整解码需 Pillow，没有时用 PNG。视频 build/validate 另需 `ffprobe`，`collect --make-posters` 另需 `ffmpeg`。画面渲染另需 LibreOffice 和 Poppler，Pillow 也可生成联系图。其他系统、模型入口和 DSH 版本需重新验证。
 
 执行器按下面的顺序选择模板：
 
@@ -182,7 +230,7 @@ python3 "$COURSE_SKILL_DIR/scripts/run_dsh.py" \
 
 | 资源 | 位置与用途 |
 | --- | --- |
-| 可直接生成课件的七页模板 | [assets/template.pptx](assets/template.pptx)，包含通用填写提示 |
+| 可直接生成课件的九页型模板 | [assets/template.pptx](assets/template.pptx)，包含通用填写提示和明确待填充的媒体框 |
 | 模板实际用到的背景和图标 | [assets/images/](assets/images/)，PPTX 内也已包含同一份资源 |
 | Lesson02 原始源稿 | [assets/sources/lesson02-source.pptx](assets/sources/lesson02-source.pptx)，用于重新提取匹配的页面 |
 | 原始讲师 PPT 模板 | [v1.0 原始附件](https://github.com/EasonZhu1997/instructor-course-ppt-template-skill/releases/download/v1.0.0/lecturer-original-template.pptx)，约 272 MiB，原文件完整保留 |
@@ -192,22 +240,23 @@ python3 "$COURSE_SKILL_DIR/scripts/run_dsh.py" \
 
 ### 需要重新提取模板时
 
-通常无需执行此步骤。仅在修改 profile 或恢复缓存时，才从随包源稿提取一份新缓存：
+通常无需执行此步骤。最终 profile 含派生媒体页，不能直接对它运行 `bootstrap`。需要恢复模板时，使用基础七页 profile 提取源页，再由准备脚本建立两个媒体页：
 
 ```bash
 COURSE_SKILL_DIR="$HOME/.dsh/skills/course-ppt-template"
 
-python3 "$COURSE_SKILL_DIR/scripts/pptx_engine.py" bootstrap \
+python3 "$COURSE_SKILL_DIR/scripts/prepare_media_template.py" \
   --source "$COURSE_SKILL_DIR/assets/sources/lesson02-source.pptx" \
-  --profile "$COURSE_SKILL_DIR/references/profile.json" \
-  --output "$PWD/outputs/重新提取的模板.pptx"
+  --profile "$COURSE_SKILL_DIR/references/base-profile.json" \
+  --output "$PWD/outputs/NEW.pptx" \
+  --profile-output "$PWD/outputs/NEW-profile.json"
 ```
 
-之后通过 `--template` 显式选择新缓存。源课件不会被覆盖。其他版本的课件可能因页面或文字框 ID 不同而无法套用当前 profile，需要重新检查。
+生成的 `NEW.pptx` 与 `NEW-profile.json` 是配套文件，之后一同传给引擎 build/validate 的 `--template`、`--profile`。源课件不会被覆盖。也可用 `--template` 输入已有基础七页模板。其他版本的源稿可能因页面或文字框 ID 不同而无法套用基础 profile，需要重新检查。
 
 ## 可以使用哪些页面
 
-同一页型可以重复使用，七种页型不等于每份课件只能有七页。
+同一页型可以重复使用，九种页型不等于每份课件只能有九页。
 
 | 页型 | 适合内容 | 已收紧的排版限制 |
 | --- | --- | --- |
@@ -218,12 +267,14 @@ python3 "$COURSE_SKILL_DIR/scripts/pptx_engine.py" bootstrap \
 | `comparison` | 双栏示范与三个观察点 | 左右正文最多 2 行，分别每行最多 20、24 个字符 |
 | `exercise` | 三道题或三项操作任务 | 左侧标题每行最多 6 个字符 |
 | `closing` | 结课总结、四个产出标签 | 大标题最多 2 行，每行最多 12 个字符 |
+| `image_explainer` | 大图、三个讲解点与图注 | `visual` 槽必填 PNG/JPEG，默认 16:9 框内等比完整显示 |
+| `video_explainer` | 视频、播放前后观察任务与图注 | `visual` 槽必填 H.264 MP4 和匹配封面，需实际播放复核 |
 
 完整限制以 [profile.json](references/profile.json) 为准。字符预算包括标点、英文和空格，不能仅凭“看起来不长”判断是否能放下。信息较多时先精简、调整页型或在允许的总页数内分页。
 
 ## 不调用模型，直接生成通用模板
 
-技能附带一份使用填写提示的七页内容文件，可直接生成模板供手工编辑：
+技能附带使用填写提示的内容文件，可直接生成模板供手工编辑；媒体槽未填时仍属于待补素材的模板：
 
 ```bash
 COURSE_SKILL_DIR="$HOME/.dsh/skills/course-ppt-template"
@@ -253,6 +304,8 @@ python3 "$COURSE_SKILL_DIR/scripts/pptx_engine.py" validate \
 
 它核对文字内容、页序、内部关系、文字样式、页面几何、背景、媒体和共享母版/布局/主题。**通过结构验证不等于画面和教学内容都正确。**
 
+媒体课件还会检查素材格式、哈希、框内等比显示和视频封面。报告中的 `structural_ready`、`assets_complete` 记录机器检查与素材齐备情况，`delivery_ready` 仍保留为 `false`，等待画面及播放复核。完成复核后另行说明观察结果，无需人为修改 JSON 完成标记。视频需要在 build 与独立 validate 时都能找到 `ffprobe`。
+
 ### 渲染并查看画面
 
 ```bash
@@ -266,6 +319,8 @@ python3 "$COURSE_SKILL_DIR/scripts/render_review.py" \
 检查中文是否完整、文字是否越框或压住备注、标题是否合理换行、页码是否正确，以及内容是否覆盖课程表。界面和通讯实操课另看 [实操课程复核清单](references/practical-course-checks.md)。
 
 渲染器可能用本机字体替代缺失字体，PPTX 本身保留参考字体。在 WPS/PowerPoint 中打开后，还应核对目标软件的显示效果。
+
+PDF/PNG 只显示视频封面。含视频的课件还需在目标 WPS/PowerPoint 中实际播放，检查起止、画面、字幕与声音；未完成播放检查时明确记录“已嵌入，播放待验”。
 
 ## 常见问题
 
@@ -283,6 +338,10 @@ python3 "$COURSE_SKILL_DIR/scripts/render_review.py" \
 | 中文缺字或显示为方框 | 检查渲染字体，必要时传 `--font-file`；不要将缺字预览当成完成 |
 | 找不到 LibreOffice/Poppler | 安装相应工具，或用 `--soffice`、`--pdftoppm` 指定路径 |
 | 结构检查通过，画面仍有问题 | 查看全部渲染页并修改文案；结构检查无法证明没有裁切或教学逻辑错误 |
+| 只有媒体提示词，没有图片或视频 | 按 `media-plan.md` 调用宿主媒体工具；计划文件不会自动生成素材 |
+| 提示媒体仍待生成 | 补齐计划指定的图片、MP4 与封面；`--allow-pending-media` 只允许查看未完成草稿 |
+| 视频构建提示缺少 ffprobe | 安装工具或在 build/validate 加 `--ffprobe`；仅提取封面才需 ffmpeg |
+| MP4 已在包中但不能确认播放 | 在目标软件实际播放；不能用文件存在或静态封面代替验收 |
 
 ## 已验证范围与文件导航
 
@@ -292,7 +351,8 @@ python3 "$COURSE_SKILL_DIR/scripts/render_review.py" \
 | --- | --- |
 | [SKILL.md](SKILL.md) | AI 助手执行说明 |
 | [install_skill.py](scripts/install_skill.py) | 安装完整技能，更新前保留备份 |
-| [profile.json](references/profile.json) | 七类页面、文字槽位和预算 |
+| [profile.json](references/profile.json) | 九类页面、文字/媒体槽位和预算 |
+| [base-profile.json](references/base-profile.json) | 原 Lesson02 七类基础页面，供模板重建 |
 | [设计说明](references/design-notes.md) | 模板来源、参考差异、已知原稿问题 |
 | [实操复核清单](references/practical-course-checks.md) | 界面流转、通讯概念和课堂步骤检查 |
 | [AIUI 联动说明](references/aiui-routing.md) | 自然触发、依赖安装、按需读取知识与误触发边界 |
@@ -300,9 +360,12 @@ python3 "$COURSE_SKILL_DIR/scripts/render_review.py" \
 | [AIUI 自然提问测试](references/aiui-routing-tests.json) | 不强制技能名的正反例测试 |
 | [install_aiui_dependency.py](scripts/install_aiui_dependency.py) | 从本机或固定上游安装真实 AIUI 开发技能 |
 | [AIUI 演示图说明](references/aiui-demo-visuals.md) | 仅眼镜端画面使用单绿、截图与生成边界及提示词 |
+| [媒体槽与计划流程](references/media-slots.md) | 图片/视频大纲、宿主生成、素材入槽与草稿状态 |
 | [验证记录](references/validation.md) | 本次实际验证范围及限制 |
 | [run_dsh.py](scripts/run_dsh.py) | 调用本机 DSH 生成课件 |
 | [pptx_engine.py](scripts/pptx_engine.py) | 导入模板、填充内容、验证结构 |
+| [plan_course_media.py](scripts/plan_course_media.py) | 由大纲列媒体任务，收集本地素材路径 |
+| [prepare_media_template.py](scripts/prepare_media_template.py) | 从基础七页建立九页型媒体模板与配套 profile |
 | [render_review.py](scripts/render_review.py) | 导出 PDF/PNG 供画面复核 |
 
 仓库随包提供经本次授权分享的课件模板、所需图片及指定源稿；原始讲师模板另附于 Releases。代码采用 [MIT License](LICENSE)，AIUI 上游依赖、课件、品牌图形与第三方素材保留各自权利，详见 [素材说明](ASSET_NOTICES.md)。不包含登录凭据、字体安装包或用户后续课程及运行日志。

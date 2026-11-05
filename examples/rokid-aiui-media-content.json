@@ -1,0 +1,67 @@
+{
+  "title": "Rokid AIUI 入门开发",
+  "slides": [
+    {
+      "layout": "cover",
+      "slots": {
+        "title": "Rokid\nAIUI入门开发",
+        "presenter": "主讲：课程讲师"
+      }
+    },
+    {
+      "layout": "image_explainer",
+      "slots": {
+        "title": "认识问候页面",
+        "subtitle": "Rokid AIUI 入门开发 · 界面状态示意",
+        "module": "页面观察",
+        "heading1": "定位内容",
+        "body1": "先读页面标题\n再看主要问候文字",
+        "heading2": "识别状态",
+        "body2": "用文字与符号\n共同表达当前状态",
+        "heading3": "保持边界",
+        "body3": "这是教学概念画面\n运行效果需另行验证",
+        "caption": "界面状态示意，非真机截图或 AIUI 运行结果"
+      },
+      "media": {
+        "visual": {
+          "path": "media/hello-aiui.png",
+          "alt": "Hello AIUI 初始状态概念画面"
+        }
+      }
+    },
+    {
+      "layout": "video_explainer",
+      "slots": {
+        "title": "观察问候变化",
+        "subtitle": "Rokid AIUI 入门开发 · 界面状态示意",
+        "module": "状态演示",
+        "heading1": "先看初始",
+        "body1": "前 3 秒显示\nHello AIUI",
+        "heading2": "再看更新",
+        "body2": "后 3 秒显示\n你好 AIUI",
+        "heading3": "课堂提问",
+        "body3": "哪些文字发生变化\n哪些位置保持一致",
+        "caption": "6 秒无声状态演示；非真机录屏，讲解文案见媒体计划"
+      },
+      "media": {
+        "visual": {
+          "path": "media/hello-aiui-demo.mp4",
+          "poster": "media/hello-aiui.png",
+          "alt": "Hello AIUI 到你好 AIUI 的 6 秒无声概念演示"
+        }
+      }
+    },
+    {
+      "layout": "closing",
+      "slots": {
+        "eyebrow": "课堂小结",
+        "title": "看清页面\n再解释状态变化",
+        "outcome1": "认识标题",
+        "outcome2": "识别状态",
+        "outcome3": "比较变化",
+        "outcome4": "说明边界",
+        "footer": "本例演示媒体槽；AIUI 运行与设备验收另行完成"
+      }
+    }
+  ]
+}

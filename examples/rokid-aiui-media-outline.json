@@ -1,0 +1,76 @@
+{
+  "title": "Rokid AIUI 入门开发",
+  "slides": [
+    {
+      "layout": "cover",
+      "slots": {
+        "title": "Rokid\nAIUI入门开发",
+        "presenter": "主讲：课程讲师"
+      }
+    },
+    {
+      "layout": "image_explainer",
+      "slots": {
+        "title": "认识问候页面",
+        "subtitle": "Rokid AIUI 入门开发 · 界面状态示意",
+        "module": "页面观察",
+        "heading1": "定位内容",
+        "body1": "先读页面标题\n再看主要问候文字",
+        "heading2": "识别状态",
+        "body2": "用文字与符号\n共同表达当前状态",
+        "heading3": "保持边界",
+        "body3": "这是教学概念画面\n运行效果需另行验证",
+        "caption": "界面状态示意，非真机截图或 AIUI 运行结果"
+      },
+      "media": {
+        "visual": {
+          "kind": "image",
+          "visual_context": "aiui_glasses",
+          "prompt": "一张简洁的 AIUI 问候页面教学示意图，480:352 画布比例。标题“AIUI 入门 · 问候页面”，主内容“Hello AIUI”，状态“初始状态”，下方提示“更新问候”。保持文字清楚、结构稀疏，在屏幕内标明教学示意，非真机截图。",
+          "alt": "Hello AIUI 初始状态概念画面"
+        }
+      }
+    },
+    {
+      "layout": "video_explainer",
+      "slots": {
+        "title": "观察问候变化",
+        "subtitle": "Rokid AIUI 入门开发 · 界面状态示意",
+        "module": "状态演示",
+        "heading1": "先看初始",
+        "body1": "前 3 秒显示\nHello AIUI",
+        "heading2": "再看更新",
+        "body2": "后 3 秒显示\n你好 AIUI",
+        "heading3": "课堂提问",
+        "body3": "哪些文字发生变化\n哪些位置保持一致",
+        "caption": "6 秒无声状态演示；非真机录屏，讲解文案见媒体计划"
+      },
+      "media": {
+        "visual": {
+          "kind": "video",
+          "visual_context": "aiui_glasses",
+          "prompt": "固定镜头展示同一问候页面的两个状态，文字位置与布局保持一致。前半段显示 Hello AIUI 与初始状态，后半段显示 你好 AIUI 与问候已更新。明确标注教学状态示意，非真机录屏。",
+          "alt": "Hello AIUI 到你好 AIUI 的两阶段状态演示",
+          "duration_seconds": 6,
+          "narration": "先观察初始问候 Hello AIUI。随后问候更新为你好 AIUI，状态提示同步变化。比较这两个画面，找出发生变化的文字。",
+          "storyboard": [
+            "0–3 秒：显示初始状态，保持固定构图。",
+            "3–6 秒：切换问候文字和状态提示，其余位置不变。"
+          ]
+        }
+      }
+    },
+    {
+      "layout": "closing",
+      "slots": {
+        "eyebrow": "课堂小结",
+        "title": "看清页面\n再解释状态变化",
+        "outcome1": "认识标题",
+        "outcome2": "识别状态",
+        "outcome3": "比较变化",
+        "outcome4": "说明边界",
+        "footer": "本例演示媒体槽；AIUI 运行与设备验收另行完成"
+      }
+    }
+  ]
+}

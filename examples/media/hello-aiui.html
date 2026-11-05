@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="zh-CN">
+<meta charset="utf-8">
+<title>Hello AIUI · 教学状态示意</title>
+<style>
+* { box-sizing: border-box; }
+html, body { margin: 0; width: 960px; height: 704px; background: #000; color: #40ff5e; font-family: "PingFang SC", sans-serif; }
+main { position: relative; width: 480px; height: 352px; transform: scale(2); transform-origin: top left; padding: 24px 28px; }
+header { display: flex; justify-content: space-between; align-items: center; padding-bottom: 12px; border-bottom: 1px solid rgba(64,255,94,.24); color: rgba(64,255,94,.72); font-size: 14px; }
+.state { font-size: 11px; color: rgba(64,255,94,.72); }
+section { margin-top: 43px; padding-left: 14px; border-left: 1px solid rgba(64,255,94,.48); }
+.kicker { font-size: 11px; letter-spacing: 1px; color: rgba(64,255,94,.72); }
+h1 { margin: 12px 0 9px; font-size: 32px; font-weight: 500; }
+p { margin: 0; font-size: 14px; color: rgba(64,255,94,.72); }
+.action { display: inline-block; margin-top: 26px; padding: 8px 16px; border: 1px solid rgba(64,255,94,.72); border-radius: 4px; font-size: 13px; background: rgba(64,255,94,.06); }
+footer { position: absolute; bottom: 24px; left: 28px; right: 28px; padding-top: 10px; border-top: 1px solid rgba(64,255,94,.24); font-size: 11px; color: rgba(64,255,94,.72); }
+</style>
+<main>
+  <header><span>AIUI 入门 · 问候页面</span><span class="state" id="state">○ 初始状态</span></header>
+  <section>
+    <div class="kicker">HELLO / 01</div>
+    <h1 id="greeting">Hello AIUI</h1>
+    <p id="description">观察问候文字与状态提示</p>
+    <div class="action" id="action">更新问候</div>
+  </section>
+  <footer>教学界面状态示意 · 非真机截图</footer>
+</main>
+<script>
+if (new URLSearchParams(location.search).get('state') === 'updated') {
+  document.querySelector('#state').textContent = '● 问候已更新';
+  document.querySelector('#greeting').textContent = '你好 AIUI';
+  document.querySelector('#description').textContent = '同一位置显示更新后的文字';
+  document.querySelector('#action').textContent = '已更新';
+}
+</script>
+</html>

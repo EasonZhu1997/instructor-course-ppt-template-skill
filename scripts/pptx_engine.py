@@ -19,6 +19,17 @@ import sys
 import tempfile
 import zipfile
 import xml.etree.ElementTree as ET
+import importlib.util
+
+_media_spec = importlib.util.spec_from_file_location("course_pptx_media", Path(__file__).with_name("pptx_media.py"))
+media = importlib.util.module_from_spec(_media_spec)
+_media_spec.loader.exec_module(media)
+
+
+def this_engine():
+    """Expose helpers without requiring an importable CLI module name."""
+    from types import SimpleNamespace
+    return SimpleNamespace(**globals())
 
 P = "http://schemas.openxmlformats.org/presentationml/2006/main"
 A = "http://schemas.openxmlformats.org/drawingml/2006/main"
@@ -146,9 +157,18 @@ def load_profile(path):
         raise DeckError("Profile needs slide_size=[cx,cy]")
     source_slides = []
     for layout, definition in profile["layouts"].items():
-        if not isinstance(definition.get("slide"), int) or definition["slide"] < 1:
-            raise DeckError(f"{layout}: positive source slide number required")
-        source_slides.append(definition["slide"])
+        if "source_layout" in definition:
+            source_layout = definition["source_layout"]
+            if source_layout not in profile["layouts"] or source_layout == layout or "source_layout" in profile["layouts"][source_layout]:
+                raise DeckError(f"{layout}: source_layout must refer to a base layout")
+            if "slide" in definition or not isinstance(definition.get("template_slide"), int) or definition["template_slide"] < 1:
+                raise DeckError(f"{layout}: derived layout needs template_slide and no source slide")
+            if definition["template_slide"] != list(profile["layouts"]).index(layout) + 1:
+                raise DeckError(f"{layout}: template_slide must match its profile order")
+        else:
+            if not isinstance(definition.get("slide"), int) or definition["slide"] < 1:
+                raise DeckError(f"{layout}: positive source slide number required")
+            source_slides.append(definition["slide"])
         color_map = definition.get("color_map", {})
         if not isinstance(color_map, dict) or any(
             not isinstance(old, str) or not re.fullmatch(r"[0-9A-Fa-f]{6}", old)
@@ -172,6 +192,7 @@ def load_profile(path):
                 raise DeckError(f"{layout}/{key}: unsupported auto value")
         if len(set(ids)) != len(ids):
             raise DeckError(f"{layout}: more than one slot addresses the same shape")
+        media.profile_check(definition, DeckError)
     if len(set(source_slides)) != len(source_slides):
         raise DeckError("Each layout must have a distinct source slide")
     return profile
@@ -228,8 +249,10 @@ def check_coverage(root, definition, layout):
         raise DeckError(f"{layout}: non-shape text needs explicit support: {outside[:3]}")
 
 
-def forbidden_relationship(rel):
+def forbidden_relationship(rel, allow_media=False):
     kind = rel.get("Type", "").rsplit("/", 1)[-1]
+    if allow_media and kind in {"video", "media"} and rel.get("TargetMode") != "External":
+        return False
     return rel.get("TargetMode") == "External" or kind in {
         "notesSlide", "notesMaster", "comments", "commentAuthors", "person",
         "threadedComment", "handoutMaster", "audio", "video", "media",
@@ -307,7 +330,7 @@ def set_slide_list(presentation, relations, slide_names):
     return xml_bytes(root, presentation), xml_bytes(rel_root, relations)
 
 
-def prune(parts):
+def prune(parts, allow_media=False):
     """Retain parts reachable through package relationships, fail on bad targets."""
     output = {}
     queue = [""]
@@ -328,7 +351,7 @@ def prune(parts):
         root = parse(original)
         removed = set()
         for rel in list(root):
-            if forbidden_relationship(rel) or (rel.get("Type") == SLIDE_TYPE and owner != "ppt/presentation.xml"):
+            if forbidden_relationship(rel, allow_media) or (rel.get("Type") == SLIDE_TYPE and owner != "ppt/presentation.xml"):
                 removed.add(rel.get("Id"))
                 root.remove(rel)
                 continue
@@ -355,6 +378,8 @@ def content_types(original, parts):
     for name in parts:
         if re.fullmatch(r"ppt/slides/slide\d+\.xml", name) and name not in present:
             ET.SubElement(root, f"{{{CT}}}Override", {"PartName": "/" + name, "ContentType": SLIDE_CONTENT_TYPE})
+        if re.fullmatch(r"ppt/media/course-[0-9a-f]{64}\.(png|jpg|mp4)", name) and name not in present:
+            ET.SubElement(root, f"{{{CT}}}Override", {"PartName": "/" + name, "ContentType": media.MIMES[Path(name).suffix]})
     if MANIFEST in parts and MANIFEST not in present:
         ET.SubElement(root, f"{{{CT}}}Override", {"PartName": "/" + MANIFEST, "ContentType": "application/json"})
     return xml_bytes(root, original)
@@ -392,6 +417,8 @@ def bootstrap(args):
     if Path(args.source).resolve() == Path(args.output).resolve():
         raise DeckError("Source and output must differ")
     profile = load_profile(args.profile)
+    if any("source_layout" in definition for definition in profile["layouts"].values()):
+        raise DeckError("Derived media layouts require prepare_media_template.py; bootstrap the base profile first")
     source = read_package(args.source)
     check_dimensions(source, profile)
     parts = dict(source)
@@ -416,6 +443,7 @@ def bootstrap(args):
             if replacement is not None:
                 color.set("val", replacement)
         check_coverage(root, definition, name)
+        media.check_placeholders(this_engine(), root, definition)
         parts[new] = xml_bytes(root, data)
         if rels:
             parts[rels_name(new)] = rels
@@ -448,8 +476,8 @@ def resolve_content(profile, content):
         raise DeckError("Content needs 1..500 slides")
     resolved = []
     for i, slide in enumerate(slides, 1):
-        if not isinstance(slide, dict) or set(slide) != {"layout", "slots"}:
-            raise DeckError(f"Slide {i}: expected exactly layout and slots")
+        if not isinstance(slide, dict) or not {"layout", "slots"} <= set(slide) or set(slide) - {"layout", "slots", "media"}:
+            raise DeckError(f"Slide {i}: expected layout, slots and optional media")
         name = slide["layout"]
         if name not in profile["layouts"]:
             raise DeckError(f"Slide {i}: unknown layout {name!r}")
@@ -544,7 +572,10 @@ def build(args):
     resolved = resolve_content(profile, content)
     template = read_package(args.template)
     check_template(template, profile, args.profile)
+    media_plan = media.resolve_all(this_engine(), profile, content, Path(args.content).resolve().parent,
+                                   getattr(args, "allow_pending_media", False), getattr(args, "ffprobe", None))
     parts = dict(template)
+    parts.update(media_plan["assets"])
     selected = []
     indices = {name: i for i, name in enumerate(profile["layouts"], 1)}
     for i, (name, values) in enumerate(resolved, 1):
@@ -556,23 +587,26 @@ def build(args):
         ss = shapes(root)
         for key, value in values.items():
             replace_text(ss[str(profile["layouts"][name]["slots"][key]["shape_id"])], value)
-        parts[new] = xml_bytes(root, data)
         rn = rels_name(old)
-        if rn in template:
+        if profile["layouts"][name].get("media_slots"):
+            parts[rels_name(new)] = media.apply_slide(this_engine(), root, template.get(rn), profile["layouts"][name], media_plan["slides"][i - 1], new)
+        elif rn in template:
             parts[rels_name(new)] = template[rn]
         else:
             parts.pop(rels_name(new), None)
+        parts[new] = xml_bytes(root, data)
         selected.append(new)
     parts["ppt/presentation.xml"], parts["ppt/_rels/presentation.xml.rels"] = set_slide_list(template["ppt/presentation.xml"], template["ppt/_rels/presentation.xml.rels"], selected)
     parts[MANIFEST] = json.dumps({**json.loads(template[MANIFEST]), "content_sha256": sha(Path(args.content).read_bytes()), "template_sha256": sha(Path(args.template).read_bytes()), "output_layouts": [n for n, values in resolved]}, ensure_ascii=False, indent=2).encode()
-    parts = prune(parts)
+    parts = prune(parts, allow_media=True)
     update_metadata(parts, content["title"], len(selected))
-    report = validate_parts(parts, profile, content, template)
+    report = validate_parts(parts, profile, content, template, Path(args.content).resolve().parent,
+                            getattr(args, "allow_pending_media", False), getattr(args, "ffprobe", None), media_plan)
     write_package(parts, args.output, args.force)
     return {**report, "output": str(Path(args.output).resolve()), "bytes": Path(args.output).stat().st_size, "sha256": sha(Path(args.output).read_bytes())}
 
 
-def validate_relationships(parts):
+def validate_relationships(parts, allow_media=False):
     for name, data in parts.items():
         if not name.endswith(".rels"):
             continue
@@ -583,7 +617,7 @@ def validate_relationships(parts):
             if not rid or rid in ids:
                 raise DeckError(f"{name}: missing or duplicate relationship ID")
             ids.add(rid)
-            if forbidden_relationship(rel):
+            if forbidden_relationship(rel, allow_media):
                 raise DeckError(f"{name}: excluded relationship remains: {rel.get('Type')}")
             target = resolve_target(owner, rel.get("Target", ""))
             if target not in parts:
@@ -591,6 +625,8 @@ def validate_relationships(parts):
         if owner and owner.endswith(".xml"):
             for element in parse(parts[owner]).iter():
                 for key, value in element.attrib.items():
+                    if key == f"{{{R}}}id" and value == "" and element.tag == f"{{{A}}}hlinkClick" and element.get("action") == "ppaction://media":
+                        continue
                     if key.startswith("{" + R + "}") and value not in ids:
                         raise DeckError(f"{owner}: XML refers to absent relationship {value}")
 
@@ -626,10 +662,11 @@ def typography(data, sid):
     return rpr
 
 
-def validate_parts(parts, profile, content, template):
+def validate_parts(parts, profile, content, template, content_dir=None, allow_pending=False, ffprobe=None, media_plan=None):
     check_dimensions(parts, profile)
     resolved = resolve_content(profile, content)
-    validate_relationships(parts)
+    media_plan = media_plan or media.resolve_all(this_engine(), profile, content, content_dir, allow_pending, ffprobe)
+    validate_relationships(parts, allow_media=True)
     p_root = parse(parts["ppt/presentation.xml"])
     p_rels = {r.get("Id"): resolve_target("ppt/presentation.xml", r.get("Target")) for r in parse(parts["ppt/_rels/presentation.xml.rels"])}
     listed = [p_rels[s.get(f"{{{R}}}id")] for s in p_root.findall("p:sldIdLst/p:sldId", NS)]
@@ -650,7 +687,10 @@ def validate_parts(parts, profile, content, template):
     shared_count = 0
     for name, data in parts.items():
         if not dynamic_part(name):
-            if name not in template or data != template[name]:
+            if name in media_plan["assets"]:
+                if data != media_plan["assets"][name]:
+                    raise DeckError(f"Declared media hash changed: {name}")
+            elif name not in template or data != template[name]:
                 raise DeckError(f"Shared template part changed: {name}")
             shared_count += 1
     expected_presentation = parse(template["ppt/presentation.xml"])
@@ -680,13 +720,15 @@ def validate_parts(parts, profile, content, template):
     for i, (name, values) in enumerate(resolved, 1):
         current = parts[f"ppt/slides/slide{i}.xml"]
         original = template[f"ppt/slides/slide{indices[name]}.xml"]
-        if layout_fingerprint(current) != layout_fingerprint(original):
+        if not profile["layouts"][name].get("media_slots") and layout_fingerprint(current) != layout_fingerprint(original):
             raise DeckError(f"Slide {i}: non-text layout/background/shape changed")
         root = parse(current)
         definition = profile["layouts"][name]
         check_coverage(root, definition, name)
         ss = shapes(root)
         expected_shapes = shapes(parse(original))
+        expected_root = parse(original)
+        complete_expected_shapes = shapes(expected_root)
         for key, value in values.items():
             sid = definition["slots"][key]["shape_id"]
             if shape_text(ss[str(sid)]) != value:
@@ -698,24 +740,41 @@ def validate_parts(parts, profile, content, template):
                 raise DeckError(f"Slide {i}/{key}: font/size/style changed")
             expected_shape = expected_shapes[str(sid)]
             replace_text(expected_shape, value)
+            replace_text(complete_expected_shapes[str(sid)], value)
             if canonical_node(expected_shape.find("p:txBody", NS)) != canonical_node(ss[str(sid)].find("p:txBody", NS)):
                 raise DeckError(f"Slide {i}/{key}: text typography/paragraph layout changed")
             text_count += 1
+        source_rn = rels_name(f"ppt/slides/slide{indices[name]}.xml")
+        output_rn = rels_name(f"ppt/slides/slide{i}.xml")
+        if definition.get("media_slots"):
+            expected_rels = media.apply_slide(this_engine(), expected_root, template.get(source_rn), definition, media_plan["slides"][i - 1], f"ppt/slides/slide{i}.xml")
+        else:
+            expected_rels = template.get(source_rn)
+        if canonical_node(root) != canonical_node(expected_root):
+            raise DeckError(f"Slide {i}: template objects, media fitting/poster/timing or content changed")
+        if (expected_rels is None) != (output_rn not in parts) or (expected_rels is not None and canonical_node(parse(expected_rels)) != canonical_node(parse(parts[output_rn]))):
+            raise DeckError(f"Slide {i}: relationships differ from declared template/media")
     for name, data in parts.items():
         if re.fullmatch(r"ppt/(slideMasters|slideLayouts)/[^/]+\.xml", name):
             if any((t.text or "").strip() for t in parse(data).findall(".//a:t", NS)):
                 raise DeckError(f"Source text remains in inherited part: {name}")
         if name.startswith("ppt/media/"):
-            if name not in template or data != template[name]:
+            expected = media_plan["assets"].get(name, template.get(name))
+            if data != expected:
                 raise DeckError(f"Media changed: {name}")
-    return {"status": "ok", "slides": len(resolved), "editable_text_shapes": text_count, "relationships": "valid", "geometry_background_shapes": "template-identical", "typography": "template-first-run-preserved", "media": "template-identical", "shared_template_parts": shared_count, "visual_review": "required"}
+    if not set(media_plan["assets"]) <= set(parts):
+        raise DeckError("Declared embedded media is missing from the package")
+    pending = media_plan["pending"]
+    return {"status": "pending_media" if pending else "ok", "structural_ready": True, "assets_complete": not pending, "delivery_ready": False, "pending_media_slots": len(pending), "pending_media": pending,
+            "embedded_media": media_plan["embedded"], "slides": len(resolved), "editable_text_shapes": text_count, "relationships": "valid", "geometry_background_shapes": "template-identical-except-declared-media-fit" if media_plan["assets"] else "template-identical", "typography": "template-first-run-preserved", "media": "declared-source-hashes-verified" if media_plan["assets"] else "template-identical", "shared_template_parts": shared_count, "visual_review": "required", "target_app_video_playback": "not-tested" if any(x["kind"] == "video" for x in media_plan["embedded"]) else "not-applicable"}
 
 
 def validate(args):
     profile = load_profile(args.profile)
     template = read_package(args.template)
     check_template(template, profile, args.profile)
-    report = validate_parts(read_package(args.pptx), profile, read_json(args.content), template)
+    report = validate_parts(read_package(args.pptx), profile, read_json(args.content), template, Path(args.content).resolve().parent,
+                            getattr(args, "allow_pending_media", False), getattr(args, "ffprobe", None))
     return {**report, "pptx": str(Path(args.pptx).resolve()), "sha256": sha(Path(args.pptx).read_bytes())}
 
 
@@ -731,6 +790,9 @@ def main():
     validate_parser.add_argument("--template", required=True)
     validate_parser.add_argument("--content", required=True)
     validate_parser.add_argument("--pptx", required=True)
+    for command in [build_parser, validate_parser]:
+        command.add_argument("--allow-pending-media", action="store_true", help="Explicitly permit planned media placeholders in an unfinished draft")
+        command.add_argument("--ffprobe", help="Optional ffprobe executable for required H.264 video verification")
     for command in [bootstrap_parser, build_parser, validate_parser]:
         command.add_argument("--profile", required=True)
     for command in [bootstrap_parser, build_parser]:

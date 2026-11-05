@@ -7,15 +7,163 @@ All paths and renderer/font substitutions are recorded in review.json.
 from __future__ import annotations
 
 import argparse
+import hashlib
+import io
 import json
 import os
 from pathlib import Path
+import posixpath
 import re
 import shutil
 import subprocess
 import sys
 import tempfile
 import xml.etree.ElementTree as ET
+import zipfile
+
+
+P = "http://schemas.openxmlformats.org/presentationml/2006/main"
+A = "http://schemas.openxmlformats.org/drawingml/2006/main"
+R = "http://schemas.openxmlformats.org/officeDocument/2006/relationships"
+P14 = "http://schemas.microsoft.com/office/powerpoint/2010/main"
+NS = {"p": P, "a": A, "r": R, "p14": P14}
+
+
+def file_sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as source:
+        for chunk in iter(lambda: source.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def preserve_namespaces(root: ET.Element, original: bytes) -> bytes:
+    """Retain namespace declarations referenced by mc:Ignorable string values."""
+    from xml.sax.saxutils import quoteattr
+    declarations = list(dict.fromkeys(item for _, item in ET.iterparse(io.BytesIO(original), events=("start-ns",))))
+    for prefix, uri in declarations:
+        if not re.fullmatch(r"ns\d+", prefix):
+            ET.register_namespace(prefix, uri)
+    result = ET.tostring(root, encoding="utf-8", xml_declaration=True)
+    start = result.find(b"?>") + 2
+    close = result.find(b">", start)
+    tag = result[start:close]
+    extra = []
+    for prefix, uri in declarations:
+        name = "xmlns:" + prefix if prefix else "xmlns"
+        if not re.search(rb"\s" + re.escape(name.encode()) + rb"=", tag):
+            extra.append(" " + name + "=" + quoteattr(uri))
+    return result[:close] + "".join(extra).encode() + result[close:]
+
+
+def poster_only_copy(source: Path, target: Path) -> dict:
+    """Make a separate QA input with native movie pictures left as their posters.
+
+    Unused embedded movie parts remain in this private copy. Only the affected
+    slide XML/relationships are changed; the original PPTX is never written.
+    """
+    from urllib.parse import unquote, urlsplit
+    if source.resolve() == target.resolve():
+        raise ValueError("Poster-only QA input must differ from the original PPTX")
+    changes, converted = {}, []
+    with zipfile.ZipFile(source) as package:
+        names = set(package.namelist())
+        if len(names) != len(package.namelist()):
+            raise ValueError("PPTX has duplicate ZIP entries")
+        bad = package.testzip()
+        if bad:
+            raise ValueError(f"PPTX has a corrupt entry: {bad}")
+        for name in sorted(names):
+            if not re.fullmatch(r"ppt/slides/slide\d+\.xml", name):
+                continue
+            original = package.read(name)
+            root = ET.fromstring(original)
+            video_pictures = [pic for pic in root.findall(".//p:pic", NS)
+                              if pic.find(".//a:videoFile", NS) is not None or pic.find(".//p14:media", NS) is not None]
+            if not video_pictures:
+                if root.find(".//a:videoFile", NS) is not None or root.find(".//p14:media", NS) is not None:
+                    raise ValueError(f"Unsupported native video outside a picture object: {name}")
+                continue
+            directory, filename = posixpath.split(name)
+            relation_name = posixpath.join(directory, "_rels", filename + ".rels")
+            if relation_name not in names:
+                raise ValueError(f"Native video slide has no relationships: {name}")
+            relation_bytes = package.read(relation_name)
+            relations = ET.fromstring(relation_bytes)
+            relation_ids = {rel.get("Id"): rel for rel in relations}
+            removed_ids, shape_ids, posters = set(), [], []
+            for pic in video_pictures:
+                metadata = pic.find("p:nvPicPr/p:cNvPr", NS)
+                shape_ids.append(metadata.get("id") if metadata is not None else "unknown")
+                blip = pic.find("p:blipFill/a:blip", NS)
+                poster_id = blip.get(f"{{{R}}}embed") if blip is not None else None
+                poster_rel = relation_ids.get(poster_id)
+                if poster_rel is None or poster_rel.get("Type") != R + "/image" or poster_rel.get("TargetMode") == "External":
+                    raise ValueError(f"Native video needs an embedded image poster: {name}")
+                raw_target = poster_rel.get("Target", "")
+                parsed = urlsplit(raw_target)
+                if parsed.scheme or parsed.netloc or "\\" in raw_target:
+                    raise ValueError(f"Video poster must be an internal image part: {name}")
+                relative = unquote(parsed.path)
+                poster = posixpath.normpath(relative.lstrip("/") if relative.startswith("/") else posixpath.join(directory, relative))
+                if poster.startswith("../") or poster not in names:
+                    raise ValueError(f"Video poster image is missing: {name}")
+                with package.open(poster) as image:
+                    signature = image.read(8)
+                if not (signature.startswith(b"\x89PNG\r\n\x1a\n") or signature.startswith(b"\xff\xd8")):
+                    raise ValueError(f"Video poster is not PNG/JPEG: {name}")
+                posters.append(poster)
+                for parent in pic.iter():
+                    for child in list(parent):
+                        if child.tag in {f"{{{A}}}videoFile", f"{{{P14}}}media"}:
+                            removed_ids.update(value for key, value in child.attrib.items() if key.startswith("{" + R + "}"))
+                            parent.remove(child)
+                # A video picture's click action must not keep invoking a
+                # removed player. Other picture objects keep their actions.
+                for parent in pic.iter():
+                    for child in list(parent):
+                        if child.tag == f"{{{A}}}hlinkClick" or (child.tag == f"{{{A}}}hlinkMouseOver" and "media" in child.get("action", "")):
+                            rid = child.get(f"{{{R}}}id")
+                            if rid:
+                                removed_ids.add(rid)
+                            parent.remove(child)
+                # Drop only emptied extension wrappers, never geometry a:ext.
+                for parent in reversed(list(pic.iter())):
+                    for child in list(parent):
+                        if not len(child) and not (child.text or "").strip() and (
+                            child.tag.rsplit("}", 1)[-1] == "extLst"
+                            or child.tag.rsplit("}", 1)[-1] == "ext" and child.get("uri") is not None
+                        ):
+                            parent.remove(child)
+            timing_removed = False
+            for timing in root.findall("p:timing", NS):
+                root.remove(timing)
+                timing_removed = True
+            still_used = {value for element in root.iter() for key, value in element.attrib.items()
+                          if key.startswith("{" + R + "}") and value}
+            cleaned = 0
+            for relation in list(relations):
+                if relation.get("Id") in removed_ids - still_used:
+                    relations.remove(relation)
+                    cleaned += 1
+            if root.find(".//a:videoFile", NS) is not None or root.find(".//p14:media", NS) is not None:
+                raise ValueError(f"Unconverted native video remains on {name}")
+            changes[name] = preserve_namespaces(root, original)
+            if cleaned:
+                changes[relation_name] = preserve_namespaces(relations, relation_bytes)
+            converted.append({"slide_part": name, "video_shape_ids": shape_ids, "poster_parts": posters,
+                              "slide_animation_timing_removed": timing_removed, "relationships_removed": cleaned})
+        target.parent.mkdir(parents=True, exist_ok=True)
+        with zipfile.ZipFile(target, "w") as output:
+            for info in package.infolist():
+                if info.filename in changes:
+                    output.writestr(info, changes[info.filename])
+                else:
+                    with package.open(info) as original_part, output.open(info, "w") as copied_part:
+                        shutil.copyfileobj(original_part, copied_part)
+    return {"mode": "video-posters-only", "video_objects_converted": sum(len(x["video_shape_ids"]) for x in converted),
+            "converted_slides": converted,
+            "note": "Static video-poster preview only. Does not test or prove video playback; original PPTX is unchanged."}
 
 
 def executable(name: str, explicit: str | None = None) -> str:
@@ -141,6 +289,8 @@ def main() -> int:
     parser.add_argument("--out", help="Review directory; default: <stem>-review")
     parser.add_argument("--pages", help="Optional 1-based pages/ranges, e.g. 1,3-5")
     parser.add_argument("--font-file", help="Optional local font file to expose to Fontconfig")
+    parser.add_argument("--video-posters", action="store_true",
+                        help="Render native movie posters from a separate static QA copy; does not test playback")
     parser.add_argument("--soffice", help="LibreOffice executable")
     parser.add_argument("--pdftoppm", help="Poppler pdftoppm executable")
     parser.add_argument("--size", type=int, default=1400, help="Longest PNG edge in pixels")
@@ -161,10 +311,18 @@ def main() -> int:
     env = os.environ.copy()
     env["FONTCONFIG_FILE"] = font_info["config"]
     soffice, poppler = executable("soffice", args.soffice), executable("pdftoppm", args.pdftoppm)
+    render_input = source
+    poster_review = None
+    source_hash = file_sha256(source) if args.video_posters else None
+    if args.video_posters:
+        render_input = render_dir / "poster-only-input" / source.name
+        poster_review = poster_only_copy(source, render_input)
+        print("Static video-poster preview only; this does not test playback. Original PPTX remains unchanged.",
+              file=sys.stderr, flush=True)
     print("Rendering PDF with local font fallback…", file=sys.stderr, flush=True)
     with tempfile.TemporaryDirectory(prefix="course-ppt-lo-") as profile:
         log = run([soffice, f"-env:UserInstallation={Path(profile).as_uri()}", "--headless",
-                   "--convert-to", "pdf:impress_pdf_Export", "--outdir", str(render_dir), str(source)],
+                   "--convert-to", "pdf:impress_pdf_Export", "--outdir", str(render_dir), str(render_input)],
                   env, args.timeout)
     pdf = render_dir / (source.stem + ".pdf")
     if not pdf.is_file() or pdf.stat().st_size < 100:
@@ -181,6 +339,8 @@ def main() -> int:
     if not pngs or (pages and [page_number(p) for p in pngs] != pages):
         raise RuntimeError("PNG page coverage does not match requested pages")
     sheet = contact_sheet(pngs, render_dir)
+    if args.video_posters and file_sha256(source) != source_hash:
+        raise RuntimeError("Original PPTX changed during review; cannot attest byte identity")
     report = {
         "source": str(source), "pdf": str(pdf), "rendered_pages": [page_number(p) for p in pngs],
         "pngs": [str(p) for p in pngs], "contact_sheet": sheet,
@@ -188,15 +348,24 @@ def main() -> int:
         "fonts": font_info, "human_visual_review_required": True,
         "scope": "Render availability only; does not establish content accuracy, layout quality, or target-app fidelity.",
     }
+    if poster_review is not None:
+        report.update({"video_poster_review": poster_review, "render_input": str(render_input),
+                       "source_sha256": source_hash, "source_unchanged": True,
+                       "scope": "Poster-only static QA; does not test or prove video playback. Original PPTX byte identity verified."})
     report_path = out / "review.json"
     report_path.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    print(json.dumps({"review": str(report_path), "pages": len(pngs), "contact_sheet": sheet}, ensure_ascii=False))
+    summary = {"review": str(report_path), "pages": len(pngs), "contact_sheet": sheet}
+    if poster_review is not None:
+        summary.update({"preview_mode": "video-posters-only", "video_objects_converted": poster_review["video_objects_converted"],
+                        "source_unchanged": True, "playback_tested": False,
+                        "note": "Static video posters only; does not prove playback."})
+    print(json.dumps(summary, ensure_ascii=False))
     return 0
 
 
 if __name__ == "__main__":
     try:
         raise SystemExit(main())
-    except (ValueError, RuntimeError, subprocess.TimeoutExpired, OSError) as error:
+    except (ValueError, RuntimeError, subprocess.TimeoutExpired, OSError, zipfile.BadZipFile, ET.ParseError) as error:
         print(f"Review failed: {error}", file=sys.stderr)
         raise SystemExit(1)

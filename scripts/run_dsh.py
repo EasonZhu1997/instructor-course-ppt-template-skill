@@ -178,6 +178,9 @@ PPT 输出：{output}
 请读取课程简报和 profile，完成课程教学内容。严格使用 profile 内的 layout 和语义槽位。
 写一个 UTF-8 JSON 对象到内容输出路径：{{"title":"课程名","slides":[{{"layout":"cover","slots":{{"title":"标题"}}}}]}}。
 该例只说明根结构。实际每页必须遵守 profile：提供该版式全部非 auto 槽位，不要写 auto 槽位，遵守 max_chars 和 max_lines。
+图片/视频请求请先读取 references/media-slots.md。媒体页使用 image_explainer/video_explainer，文字仍在 slots，素材用独立 media.visual 对象。
+仅使用简报明确提供且确实存在的本地素材；相对路径以 content.json 所在目录解析，跨目录素材请用绝对路径。图片写 path/alt；视频另写 poster，使用 H.264 MP4。
+不得把提示词写成文件路径。素材未生成时用 plan_course_media.py 先做媒体计划，报告待补，不把草稿报成最终PPT；本执行器的正式 build 不加 --allow-pending-media。
 不要把实现、验证过程写进教学内容。遇到文字过长先缩写或拆页，禁止改字体字号、位置、背景和模板。
 然后用 bash 执行下列 argv 对应的命令（正确引用每个参数）：
 build argv: {json.dumps(build, ensure_ascii=False)}
@@ -185,7 +188,7 @@ validate argv: {json.dumps(validate, ensure_ascii=False)}
 如校验失败，只修订 content.json 再运行 build 和 validate，最多修订 3 次。
 只使用指定模型 {args.model}。禁止切换模型、修改源 skill 或引擎，不要启动子代理、后台任务或 goal。
 文件已获用户授权在当前输出目录新建。不要替换已有其他文件。
-只有 build 和 validate 均成功，才报告 PPT 生成成功。最终回复给出输出绝对路径及验证结果。
+只有 build 和 validate 均成功，才报告 PPT 文件已生成且结构通过；画面和视频播放需单独验证。最终回复给出输出绝对路径及验证结果。
 """
     (work / "prompt.txt").write_text(prompt, encoding="utf-8")
     command = [str(dsh), "headless", "--patch", str(patch), "--json", "-"]

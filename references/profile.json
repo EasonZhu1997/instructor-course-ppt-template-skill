@@ -475,6 +475,205 @@
         }
       },
       "remove_shapes": []
+    },
+    "image_explainer": {
+      "source_layout": "comparison",
+      "template_slide": 8,
+      "slots": {
+        "title": {
+          "shape_id": 17,
+          "max_chars": 24,
+          "max_lines": 1
+        },
+        "subtitle": {
+          "shape_id": 18,
+          "max_chars": 40,
+          "max_lines": 1
+        },
+        "module": {
+          "shape_id": 20,
+          "max_chars": 8,
+          "max_lines": 1
+        },
+        "heading1": {
+          "shape_id": 33,
+          "max_chars": 16,
+          "max_lines": 1
+        },
+        "body1": {
+          "shape_id": 34,
+          "max_chars": 42,
+          "max_lines": 3,
+          "max_chars_per_line": 18
+        },
+        "heading2": {
+          "shape_id": 37,
+          "max_chars": 16,
+          "max_lines": 1
+        },
+        "body2": {
+          "shape_id": 38,
+          "max_chars": 42,
+          "max_lines": 3,
+          "max_chars_per_line": 18
+        },
+        "heading3": {
+          "shape_id": 41,
+          "max_chars": 16,
+          "max_lines": 1
+        },
+        "body3": {
+          "shape_id": 42,
+          "max_chars": 42,
+          "max_lines": 3,
+          "max_chars_per_line": 18
+        },
+        "course": {
+          "shape_id": 45,
+          "max_chars": 20,
+          "max_lines": 1,
+          "auto": "@course"
+        },
+        "required": {
+          "shape_id": 47,
+          "max_chars": 2,
+          "max_lines": 1,
+          "auto": "@required"
+        },
+        "page": {
+          "shape_id": 48,
+          "max_chars": 10,
+          "max_lines": 1,
+          "auto": "@page"
+        },
+        "caption": {
+          "shape_id": 501,
+          "max_chars": 46,
+          "max_lines": 1
+        }
+      },
+      "media_slots": {
+        "visual": {
+          "shape_id": 500,
+          "kind": "image",
+          "fit": "contain",
+          "required": true,
+          "rect_emu": [
+            609600,
+            1371600,
+            6858000,
+            3857625
+          ],
+          "aspect_ratio": [
+            16,
+            9
+          ],
+          "pending_caption_slot": "caption"
+        }
+      }
+    },
+    "video_explainer": {
+      "source_layout": "comparison",
+      "template_slide": 9,
+      "slots": {
+        "title": {
+          "shape_id": 17,
+          "max_chars": 24,
+          "max_lines": 1
+        },
+        "subtitle": {
+          "shape_id": 18,
+          "max_chars": 40,
+          "max_lines": 1
+        },
+        "module": {
+          "shape_id": 20,
+          "max_chars": 8,
+          "max_lines": 1
+        },
+        "heading1": {
+          "shape_id": 33,
+          "max_chars": 16,
+          "max_lines": 1
+        },
+        "body1": {
+          "shape_id": 34,
+          "max_chars": 42,
+          "max_lines": 3,
+          "max_chars_per_line": 18
+        },
+        "heading2": {
+          "shape_id": 37,
+          "max_chars": 16,
+          "max_lines": 1
+        },
+        "body2": {
+          "shape_id": 38,
+          "max_chars": 42,
+          "max_lines": 3,
+          "max_chars_per_line": 18
+        },
+        "heading3": {
+          "shape_id": 41,
+          "max_chars": 16,
+          "max_lines": 1
+        },
+        "body3": {
+          "shape_id": 42,
+          "max_chars": 42,
+          "max_lines": 3,
+          "max_chars_per_line": 18
+        },
+        "course": {
+          "shape_id": 45,
+          "max_chars": 20,
+          "max_lines": 1,
+          "auto": "@course"
+        },
+        "required": {
+          "shape_id": 47,
+          "max_chars": 2,
+          "max_lines": 1,
+          "auto": "@required"
+        },
+        "page": {
+          "shape_id": 48,
+          "max_chars": 10,
+          "max_lines": 1,
+          "auto": "@page"
+        },
+        "caption": {
+          "shape_id": 501,
+          "max_chars": 46,
+          "max_lines": 1
+        }
+      },
+      "media_slots": {
+        "visual": {
+          "shape_id": 500,
+          "kind": "video",
+          "fit": "contain",
+          "required": true,
+          "rect_emu": [
+            609600,
+            1371600,
+            6858000,
+            3857625
+          ],
+          "aspect_ratio": [
+            16,
+            9
+          ],
+          "pending_caption_slot": "caption"
+        }
+      }
     }
+  },
+  "derived_layout_schema": 1,
+  "preparation": {
+    "script": "scripts/prepare_media_template.py",
+    "base_profile_sha256": "b9a29e5dcc7725646afb3ba4bd930c82182915f2932f5578c63731c1facbf14c",
+    "base_template_sha256": "070d2e948d3cae511666b6f073a8e75a2325c48d70f61d004565e46218cd3b04",
+    "rebuild": "Bootstrap the base profile first, then run prepare_media_template.py; derived layouts are not original Lesson02 slide numbers."
   }
 }

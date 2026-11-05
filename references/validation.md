@@ -25,7 +25,7 @@
 - 输出扫描未发现旧课程全文、旧 JSX、备注或自定义属性携带。
 - 使用 LibreOffice + Poppler 渲染全部交付页，查看中文、换行与边界。微软雅黑在该渲染环境中通过隔离 Fontconfig 映射到本机 PingFang SC，PPTX 本身仍保留参考字体。此结果不等于已在 PowerPoint/WPS 中验证每个平台的字体度量。
 
-Skill Creator 的 quick_validate 通过。引擎仅依赖 Python 标准库；渲染另需 LibreOffice/Poppler，联系图可选用 Pillow。本记录是此次实测范围，不保证任意长文案或任意字体环境都自动排版正确，后续课程仍须按 SKILL 复查渲染。
+当时 Skill Creator 的 quick_validate 通过。v1.0 引擎仅依赖 Python 标准库；v1.2 媒体依赖见下文。渲染另需 LibreOffice/Poppler，联系图可选用 Pillow。本记录不保证任意长文案或任意字体环境都自动排版正确，后续课程仍须按 SKILL 复查渲染。
 
 
 ## 追加实操课程测试
@@ -48,9 +48,20 @@ Skill Creator 的 quick_validate 通过。引擎仅依赖 Python 标准库；渲
 
 公开示例统一为《Rokid AIUI 入门开发》。使用最终随包模板、DSH/deepseek-flash原生技能调用生成10页，最终127个可编辑文本框；保留原模型输出后进行内容精修，逐页检查英文代码标识、状态、文字边界。未生成或运行AIUI项目，未把制图提示词当成已生成图片。
 
-通用comparison页通过profile color_map将源页40FF5E归一为FFFFFF，只有AIUI单绿眼镜画面的独立辅助图使用绿色；图像生成需宿主具有相应工具，当前模板引擎无图片槽。映射前后仅指定颜色属性改变，几何不变；映射后缓存、模板和示例均重新结构校验。
+通用comparison页通过profile color_map将源页40FF5E归一为FFFFFF，绿色只用于AIUI单绿眼镜画面。v1.0/v1.1当时只支持独立辅助图；v1.2新增媒体槽，见下文。图像生成仍需宿主具有相应工具。映射前后仅指定颜色属性改变，几何不变。
 
 
 ## v1.1 AIUI 自动联动
 
 修复 DSH 无法发现 aiui-dev、执行器未暴露依赖且限制读取资料的问题，新增按真实课程主题自动联动。八条不点名技能的自然提问已实测；AIUI正例4/4真实调用两技能并读取开发文档，边界结果和完整6/8矩阵见 aiui-routing-validation.md，不将它称为全8条通过或纯描述改动A/B。另有三页真实生成回归核对原生技能与知识读取。
+
+## v1.2 图片与视频槽（2026-11-06）
+
+- 模板从七页型增加至九页型，新增 `image_explainer`、`video_explainer`；基础七页及其关系 XML 与 v1.1 随包模板逐字节一致。九页已渲染查看。
+- 图片按比例居中或依 profile 明确裁切；真实 H.264 MP4 与封面嵌入包内，关系和播放时间线按原稿结构建立。PNG 检查真实解压像素流，JPEG 另需 Pillow，视频验证另需 ffprobe。
+- 运行 `python3 scripts/test_media_slots.py`：11 项全部通过、0 跳过、0 失败；覆盖旧七页型与十页课程、图/视频嵌入哈希、错误输入、伪图片、待补草稿、素材收集、图注恢复、视频字节与时间线篡改拒绝。缺少 ffprobe 时另验 7 项通过、4 项视频明确跳过，报告不会冒称完整通过。
+- 大纲实际生成两项媒体计划，缺素材时拒绝成品构建；显式草稿有可见“待补图片/视频”字样。放入素材、自动提取封面、collect、build、validate 流程通过。提示词、分镜和旁白文本没有被当成已生成视频或音轨。
+- DSH CLI 0.2.2-rc.1、`deepseek-account/deepseek-flash` 真实生成四页《Rokid AIUI 入门开发》图文视频课件，原生加载两个技能并实际读取 framework/events/components/wxss。四页、36 个可编辑文字框，独立验证通过；素材与封面 SHA 均匹配。相同模型文案在最终通用模板上再次 build/validate 通过。
+- 四页公开示例与 DSH 成品均已查看全页静态封面预览；绿色只在屏幕概念画面内。`--video-posters` 只改临时 QA 副本，原 PPTX 哈希保持不变。早期媒体样本在本机 WPS 编辑器播放时观察到“Hello AIUI → 你好 AIUI”变化；放映点击与其他软件播放尚未完成验收，不宣称跨软件播放全部通过。
+
+示例 MP4 为六秒无声 HTML 概念状态演示，非 AIUI 运行结果或真机录屏。本版本交付媒体槽及后续生成工具可消费的任务契约，没有内置图片、视频或语音模型账号。机器报告的结构、素材状态与交付复核保持区分；使用者仍须检查自己课程的画面与目标软件播放。

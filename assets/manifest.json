@@ -1,9 +1,9 @@
 {
-  "version": "1.1.0",
+  "version": "1.2.0",
   "template": "assets/template.pptx",
   "profile": "references/profile.json",
-  "template_sha256": "070d2e948d3cae511666b6f073a8e75a2325c48d70f61d004565e46218cd3b04",
-  "profile_sha256": "b9a29e5dcc7725646afb3ba4bd930c82182915f2932f5578c63731c1facbf14c",
+  "template_sha256": "a1bb95318a05e57e6eed6c4bf4995ac475c3fb796a903d1ec19fa8ecd7091370",
+  "profile_sha256": "070a007e9fe787d6322bef878a7f9c8af15446d0265d4a76450efaa9a222e9ec",
   "source_lesson02_sha256": "77cfcc61a726aeea0dd06562226f10abfaf2dc8233a8051d8a43521c43fcd506",
   "lecturer_original_sha256": "0f20a249f598e09a0412c1d0e0a001195785607d7c31d360e04ba8172372e0a4",
   "images": [
@@ -19,7 +19,7 @@
     }
   ],
   "notes": "Generic editable teaching template; green is reserved for explicitly identified AIUI single-green glasses screen illustrations. Assets retain original rights.",
-  "preview_sha256": "da813edde800084ec1ca73cf01845f635a28bdc0bbfa4e754aefbff0dd6e39a2",
+  "preview_sha256": "ee372b53e1e3a85c703824c61803a41e42b948830b33764cdb48b66370c3db61",
   "name": "讲师课程 PPT 模版 Skill",
   "repository": "https://github.com/EasonZhu1997/instructor-course-ppt-template-skill",
   "example": {
@@ -27,7 +27,7 @@
     "content": "examples/rokid-aiui-intro-content.json",
     "pptx": "examples/rokid-aiui-intro.pptx",
     "content_sha256": "c72d351d459adc700aba16c6a43b2718c559c6cc86c8b2137f8ef296b16f3902",
-    "pptx_sha256": "f07bde33942652b0f8cb0f1e64579ece5dc7db663e5d76eaaa97e10aaefc68fc"
+    "pptx_sha256": "66970b660ef591bf2c83b5cb6aa595efcd3f5cbbfc45c9bfb0813aff65cd548e"
   },
   "aiui_dependency": {
     "name": "aiui-dev",
@@ -35,5 +35,48 @@
     "installation": "scripts/install_skill.py --with-aiui",
     "upstream": "https://github.com/jsar-project/AIUI",
     "commit": "07db37b3f3ea44cc4efe669cd3456b0221195189"
+  },
+  "base_profile": {
+    "file": "references/base-profile.json",
+    "sha256": "b9a29e5dcc7725646afb3ba4bd930c82182915f2932f5578c63731c1facbf14c"
+  },
+  "media_slot_schema": 1,
+  "layouts": [
+    "cover",
+    "overview",
+    "section",
+    "concepts",
+    "comparison",
+    "exercise",
+    "closing",
+    "image_explainer",
+    "video_explainer"
+  ],
+  "media_example": {
+    "title": "Rokid AIUI 入门开发",
+    "outline": "examples/rokid-aiui-media-outline.json",
+    "content": "examples/rokid-aiui-media-content.json",
+    "pptx": "examples/rokid-aiui-media-demo.pptx",
+    "content_sha256": "ba6c10750b8b14a7e32e99c949842bfeff9095d4103de7ccd6fb262d50da5a14",
+    "pptx_sha256": "dcc6153fce7db45cc949764820f0225881e9ed4ef205994880227381d0b8d60d",
+    "provenance": "HTML concept states rendered with Chrome and encoded as a silent six-second H.264 video; not AIUI runtime or device capture.",
+    "assets": [
+      {
+        "file": "examples/media/hello-aiui-demo.mp4",
+        "sha256": "7a284cc6123fb8ec2d7165d654e7badeb5575d53fc7b9ba8b5283dd1f2a2ab46"
+      },
+      {
+        "file": "examples/media/hello-aiui-updated.png",
+        "sha256": "b1dd498354279bce7661b5966ffd7229bd9205fd9ece0bfdc3ad60a9cca6a760"
+      },
+      {
+        "file": "examples/media/hello-aiui.html",
+        "sha256": "28008d1cc4455915a2cfddb51972d33edc30e93f4a2e0284043a547eda09bc1b"
+      },
+      {
+        "file": "examples/media/hello-aiui.png",
+        "sha256": "fb9ce123600066ed2c50c2f1190f7dae4c9b6c787cbdf0d206c1e69e14cd98fe"
+      }
+    ]
   }
 }

@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Install this complete course PPT skill without merging with an older copy.
 
-The bundled template is required. Installing or using this skill does not need
-the original course decks, a Git checkout, or third-party Python packages.
+The bundled template is required. Installation and text/PNG decks use stdlib;
+JPEG decoding needs Pillow and video validation needs ffprobe.
 Backups and staged copies stay outside the destination's skill search root.
 """
 
@@ -25,7 +25,12 @@ REQUIRED_FILES = (
     "SKILL.md",
     "assets/template.pptx",
     "references/profile.json",
+    "references/base-profile.json",
+    "examples/template-content.json",
     "scripts/pptx_engine.py",
+    "scripts/pptx_media.py",
+    "scripts/prepare_media_template.py",
+    "scripts/plan_course_media.py",
     "scripts/run_dsh.py",
     "scripts/render_review.py",
     "scripts/install_skill.py",
